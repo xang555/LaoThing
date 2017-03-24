@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
@@ -147,7 +145,7 @@ uint8_t CreateServerApi() {
           Serial.println(WiFi.softAPIP());
 
           server.on("/setting",HTTP_POST,handleSetting);
-
+          server.on("/controller", HTTP_POST, handleSwitchController);
           server.onNotFound([](){
             server.send(200,"text/html","<h2>Not Found</h2>");
             });
@@ -167,6 +165,25 @@ uint8_t CreateServerApi() {
            }
 
 } //create server api for mode setting wifi
+
+void handleSwitchController() {
+
+  String switchname = server.arg("swn");
+  uint8_t cmd = server.arg("cmd").toInt();
+
+  if (switchname == "L1") {
+    digitalWrite(D1,cmd);
+  }else if (switchname == "L2") {
+    digitalWrite(D2,cmd);
+  }else if (switchname == "L3") {
+    digitalWrite(D3,cmd);
+  }else if (switchname == "L4") {
+    digitalWrite(D4,cmd);
+  }
+
+  server.send(200,"application/json","{ \"state\" : \""+ cmd +"\" }");
+
+} // handle switch in mode offline
 
 void handleSetting(){
 
