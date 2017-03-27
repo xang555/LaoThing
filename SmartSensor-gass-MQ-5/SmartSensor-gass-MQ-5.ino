@@ -6,9 +6,12 @@ gass sensor MQ-5
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
+#include <FirebaseCloudMessaging.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <WiFiUdp.h>
+#include <utility>
+#include <vector>
 
 // Set firebae information
 #define FIREBASE_HOST "laothing-d014b.firebaseio.com"
@@ -17,15 +20,18 @@ gass sensor MQ-5
 #define AP_SSID "laothing-837548734"
 #define AP_PASSWORD "1234567890"
 #define SETTING_MODE  D0
+#define SERVER_KEY  "AAAAT6-pZT0:APA91bEKMf0X-gK7Cg14NTvWh3Al2wRa2EhWnVrWjUv8Lr8uDX7HfOF4my2iUDw5Am181YKbMSqyppnq-G_lpy3uPF6jqw4ObxCe11ISoQ7qmzCh8WtpIttfTSkRLvRgd1rsOFNR218L"
 
 String WIFI_SSID = "NODEMCU";
 String WIFI_PASSWORD = "nodemcu";
 
 const String DEVICE_ID = "874387434"; //set DEVICE ID
+
 const String uplink_path = DEVICE_ID + "/active/uplink"; // set uplink path
 const String ack_path = DEVICE_ID + "/active/ack"; // set ack path
 const String update_time_path = DEVICE_ID + "/sensor/values/time";
 const String update_sensorval_path = DEVICE_ID + "/sensor/values/sensorval";
+const String alert_path = DEVICE_ID + "/sensor";
 
 static uint8_t state_mode = 0; // 0 is autoconct ; 1 is setting mode
 static bool init_mode = true; // is init mode
@@ -184,8 +190,8 @@ String Str_password = server.arg("passwd");
 
 uint8_t ConnectwifiAndFirebase() {
 
-     const char* ssid ;
-     const char* passwd ;
+ const char* ssid ;
+ const char* passwd ;
 
   ssid = WIFI_SSID.c_str();
   passwd = WIFI_PASSWORD.c_str();
@@ -242,6 +248,76 @@ void handleFirebaseSensor() {
 
 } // handle data in firebase
 
+
+void Notification(float sensorval) {
+
+  if (sensorval>= 2 && sensorval <= 4) { // CO gass alert code 500
+    //  alertMessage("500");
+  }else if (sensorval >= 0 && sensorval <= 1) { // LPG and CH4 gass alert code 200
+      //alertMessage("200");
+  }
+
+}
+
+
+void alertMessage(std::string alert_code) {
+
+  FirebaseCloudMessaging fcm(SERVER_KEY);
+//   FirebaseCloudMessage fmsg;
+//
+//   fmsg.high_priority = true;
+//   fmsg.time_to_live = 3600 * 2;
+//
+// std::vector<std::pair<std::string, std::string>> data;
+// std::pair <std::string, std::string> pairmessage("err","200");
+// pairmessage.first  = "err";
+// pairmessage.second  = alert_code;
+// data.push_back(pairmessage);
+//
+// fmsg.data = data;
+//
+// FirebaseObject sensors = Firebase.get(alert_path);
+//
+// // handle error
+// if (Firebase.failed()) {
+//     Serial.print("get sensor values failed:");
+//     Serial.println(Firebase.error());
+//     return;
+// }
+//
+// JsonVariant registerIDs = sensors.getJsonVariant("alert");
+//
+// // handle error
+// if (sensors.failed()) {
+//     Serial.print("get alert failed:");
+//     Serial.println(sensors.error());
+//     return;
+// }
+//
+// const JsonObject& ridsobject = registerIDs.asObject();
+//
+//  std::vector<std::string> rgid;
+//
+// for(auto Id : ridsobject){
+//       std::string rId_val = ridsobject[Id.key];
+//       rgid.push_back(rId_val);
+// }
+//
+// FirebaseError error = fcm.SendMessageToUsers(rgid, fmsg);
+//
+// if (error) {
+//    Serial.print("Error:");
+//    Serial.print(error.code());
+//    Serial.print(" :: ");
+//    Serial.println(error.message().c_str());
+//  } else {
+//    Serial.println("Sent OK!");
+// }
+
+
+} //send alert
+
+
 void AnswerUplink() {
 
 static uint8_t uplink = 0;
@@ -287,7 +363,7 @@ float getSensorValue(){
     /*-----------------------------------------------*/
 
       sensor_volt = sensorValue/1023 * 3.3;
-      RS_air = (3.3-sensor_volt)/sensor_volt; // omit *RL
+      RS_air = (3.3 - sensor_volt)/sensor_volt; // omit *RL
       R0 = RS_air/6.5; // The ratio of RS/R0 is 6.5 in a clear air from Graph
 
       float ratio = RS_air / 0.34;
@@ -296,9 +372,9 @@ float getSensorValue(){
 
 } // get gass sensor
 
-
 long getTimeNow(){
 timeClient.update();
+
 long timstramp = timeClient.getEpochTime();
 return timstramp;
 }
