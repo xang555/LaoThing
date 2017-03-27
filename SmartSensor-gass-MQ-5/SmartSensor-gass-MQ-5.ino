@@ -21,6 +21,9 @@ gass sensor MQ-5
 #define AP_PASSWORD "1234567890"
 #define SETTING_MODE  D0
 #define SERVER_KEY  "AAAAT6-pZT0:APA91bEKMf0X-gK7Cg14NTvWh3Al2wRa2EhWnVrWjUv8Lr8uDX7HfOF4my2iUDw5Am181YKbMSqyppnq-G_lpy3uPF6jqw4ObxCe11ISoQ7qmzCh8WtpIttfTSkRLvRgd1rsOFNR218L"
+#define CO_GASS_CODE "500"
+#define LPG_AND_CH4_GASS_CODE "200"
+
 
 String WIFI_SSID = "NODEMCU";
 String WIFI_PASSWORD = "nodemcu";
@@ -248,74 +251,73 @@ void handleFirebaseSensor() {
 
 } // handle data in firebase
 
+void alertMessage(std::string alert_code) {
+
+  FirebaseCloudMessaging fcm(SERVER_KEY);
+  FirebaseCloudMessage fmsg;
+
+  fmsg.high_priority = true;
+  fmsg.time_to_live = 3600 * 2;
+
+std::vector<std::pair<std::string, std::string>> data;
+std::pair <std::string, std::string> pairmessage("err","200");
+pairmessage.first  = "err";
+pairmessage.second  = alert_code;
+data.push_back(pairmessage);
+
+fmsg.data = data;
+
+FirebaseObject sensors = Firebase.get(alert_path);
+
+// handle error
+if (Firebase.failed()) {
+    Serial.print("get sensor values failed:");
+    Serial.println(Firebase.error());
+    return;
+}
+
+JsonVariant registerIDs = sensors.getJsonVariant("alert");
+
+// handle error
+if (sensors.failed()) {
+    Serial.print("get alert failed:");
+    Serial.println(sensors.error());
+    return;
+}
+
+const JsonObject& ridsobject = registerIDs.asObject();
+
+ std::vector<std::string> rgid;
+
+for(auto Id : ridsobject){
+      std::string rId_val = ridsobject[Id.key].asString();
+      rgid.push_back(rId_val);
+}
+
+FirebaseError error = fcm.SendMessageToUsers(rgid, fmsg);
+
+if (error) {
+   Serial.print("Error:");
+   Serial.print(error.code());
+   Serial.print(" :: ");
+   Serial.println(error.message().c_str());
+ } else {
+   Serial.println("Sent OK!");
+}
+
+
+} //send alert
+
 
 void Notification(float sensorval) {
 
   if (sensorval>= 2 && sensorval <= 4) { // CO gass alert code 500
-    //  alertMessage("500");
+      alertMessage(CO_GASS_CODE);
   }else if (sensorval >= 0 && sensorval <= 1) { // LPG and CH4 gass alert code 200
-      //alertMessage("200");
+      alertMessage(LPG_AND_CH4_GASS_CODE);
   }
 
 }
-
-
-void alertMessage(std::string alert_code) {
-
-  FirebaseCloudMessaging fcm(SERVER_KEY);
-//   FirebaseCloudMessage fmsg;
-//
-//   fmsg.high_priority = true;
-//   fmsg.time_to_live = 3600 * 2;
-//
-// std::vector<std::pair<std::string, std::string>> data;
-// std::pair <std::string, std::string> pairmessage("err","200");
-// pairmessage.first  = "err";
-// pairmessage.second  = alert_code;
-// data.push_back(pairmessage);
-//
-// fmsg.data = data;
-//
-// FirebaseObject sensors = Firebase.get(alert_path);
-//
-// // handle error
-// if (Firebase.failed()) {
-//     Serial.print("get sensor values failed:");
-//     Serial.println(Firebase.error());
-//     return;
-// }
-//
-// JsonVariant registerIDs = sensors.getJsonVariant("alert");
-//
-// // handle error
-// if (sensors.failed()) {
-//     Serial.print("get alert failed:");
-//     Serial.println(sensors.error());
-//     return;
-// }
-//
-// const JsonObject& ridsobject = registerIDs.asObject();
-//
-//  std::vector<std::string> rgid;
-//
-// for(auto Id : ridsobject){
-//       std::string rId_val = ridsobject[Id.key];
-//       rgid.push_back(rId_val);
-// }
-//
-// FirebaseError error = fcm.SendMessageToUsers(rgid, fmsg);
-//
-// if (error) {
-//    Serial.print("Error:");
-//    Serial.print(error.code());
-//    Serial.print(" :: ");
-//    Serial.println(error.message().c_str());
-//  } else {
-//    Serial.println("Sent OK!");
-// }
-
-
-} //send alert
 
 
 void AnswerUplink() {
