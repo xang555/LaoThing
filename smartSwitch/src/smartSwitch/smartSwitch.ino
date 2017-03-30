@@ -6,7 +6,6 @@
 #include <ESP8266WebServer.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
-#include <TimeAlarms.h>
 
 // Set firebae information
 #define FIREBASE_HOST "laothing-d014b.firebaseio.com"
@@ -27,29 +26,53 @@ const String status_channel_one_path = DEVICE_ID + "/status/L1"; // set channle 
 const String status_channel_two_path = DEVICE_ID + "/status/L2"; // set channle two path
 const String status_channel_three_path = DEVICE_ID + "/status/L3"; // set channle three path
 const String status_channel_four_path = DEVICE_ID + "/status/L4"; // set channle four path
-const String scheduler_status_channel_one_path = DEVICE_ID + "/L1/status"; // set scheduler status change new one
-const String scheduler_time_channel_one_path = DEVICE_ID + "/L1/time";// set scheduler time change new one
-const String scheduler_status_channel_tow_path = DEVICE_ID + "/L2/status"; // set scheduler status change new tow
-const String scheduler_time_channel_tow_path = DEVICE_ID + "/L2/time";// set scheduler time change new tow
-const String scheduler_status_channel_three_path = DEVICE_ID + "/L3/status";// set scheduler status change new three
-const String scheduler_time_channel_three_path = DEVICE_ID + "/L3/time";// set scheduler time change new three
-const String scheduler_status_channel_four_path = DEVICE_ID + "/L4/status";// set scheduler status change new four
-const String scheduler_time_channel_four_path = DEVICE_ID + "/L4/time";// set scheduler time change new four
+
+const String scheduler_state_channel_one_path = DEVICE_ID + "/scheduler/L1/state"; // state L1
+const String scheduler_status_channel_one_path = DEVICE_ID + "/scheduler/L1/status"; // set scheduler status change new one
+const String scheduler_time_hour_channel_one_path = DEVICE_ID + "/scheduler/L1/time/hour";// set scheduler huor change new one
+const String scheduler_time_minute_channel_one_path = DEVICE_ID + "/scheduler/L1/time/minute";// set scheduler minute change new one
+
+const String scheduler_state_channel_tow_path = DEVICE_ID + "/scheduler/L2/state"; // state L2
+const String scheduler_status_channel_tow_path = DEVICE_ID + "/scheduler/L2/status"; // set scheduler status change new tow
+const String scheduler_time_hour_channel_tow_path = DEVICE_ID + "/scheduler/L2/time/hour";// set scheduler huor change new tow
+const String scheduler_time_minute_channel_tow_path = DEVICE_ID + "/scheduler/L2/time/minute";// set scheduler minute change new tow
+
+const String scheduler_state_channel_three_path = DEVICE_ID + "/scheduler/L3/state"; // state L3
+const String scheduler_status_channel_three_path = DEVICE_ID + "/scheduler/L3/status";// set scheduler status change new three
+const String scheduler_time_channel_three_path = DEVICE_ID + "/scheduler/L3/time";// set scheduler time change new three
+const String scheduler_time_hour_channel_three_path = DEVICE_ID + "/scheduler/L3/time/hour";// set scheduler huor change new three
+const String scheduler_time_minute_channel_three_path = DEVICE_ID + "/scheduler/L3/time/minute";// set scheduler minute change new three
+
+const String scheduler_state_channel_four_path = DEVICE_ID + "/scheduler/L4/state"; // state L4
+const String scheduler_status_channel_four_path = DEVICE_ID + "/scheduler/L4/status";// set scheduler status change new four
+const String scheduler_time_channel_four_path = DEVICE_ID + "/scheduler/L4/time";// set scheduler time change new four
+const String scheduler_time_hour_channel_four_path = DEVICE_ID + "/scheduler/L4/time/hour";// set scheduler huor change new four
+const String scheduler_time_minute_channel_four_path = DEVICE_ID + "/scheduler/L4/time/minute";// set scheduler minute change new four
 
 
 static uint8_t state_mode = 0; // 0 is autoconct ; 1 is setting mode
 static bool init_mode = true; // is init mode
 
-// scheduler status
-static uint8_t status_ch1 = 0;
-static uint8_t status_ch2 = 0;
-static uint8_t status_ch3 = 0;
-static uint8_t status_ch4 = 0;
-// scheduler time
-static long time_ch1 = 0;
-static long time_ch2 = 0;
-static long time_ch3 = 0;
-static long time_ch4 = 0;
+/*----------- init for l1 --------------*/
+static int init_day_for_l1 = 30; // init day
+static int init_month_for_l1 = 3; // init month
+static int init_yare_for_l1 = 2017; //init yare
+
+/*----------- init for l2 --------------*/
+static int init_day_for_l2 = 30; // init day
+static int init_month_for_l2 = 3; // init month
+static int init_yare_for_l2 = 2017; //init yare
+
+/*----------- init for l1 --------------*/
+static int init_day_for_l3 = 30; // init day
+static int init_month_for_l3 = 3; // init month
+static int init_yare_for_l3 = 2017; //init yare
+
+/*----------- init for l1 --------------*/
+static int init_day_for_l4 = 30; // init day
+static int init_month_for_l4 = 3; // init month
+static int init_yare_for_l4 = 2017; //init yare
+
 
 
 ESP8266WebServer server(80);
@@ -167,7 +190,10 @@ uint8_t AutoConnectWifiAndFirebase(){
 
   setSyncProvider(getTimeNow);
   setSyncInterval(3600);
-
+  initCurentDateTimeForSwitchOne(); //init date time for l1
+  initCurentDateTimeForSwitchtow(); //init date time for l2
+  initCurentDateTimeForSwitchthree(); //init date time for l3
+  initCurentDateTimeForSwitchfour(); //init date time for l4
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH); //connect to Firebase
 
   return 2; //next state
@@ -230,7 +256,7 @@ String Str_password = server.arg("passwd");
   WIFI_PASSWORD = Str_password;
   server.send(200,"application/json","{ \"stat\" : \"ok\" }");
   delay(500);
-   looping = false;
+  looping = false;
   WiFi.softAPdisconnect(true);
   server.close();
 
@@ -259,9 +285,13 @@ uint8_t ConnectwifiAndFirebase() {
   Serial.println(WiFi.localIP());
 
   timeClient.begin(); //time server
-
   setSyncProvider(getTimeNow);
   setSyncInterval(3600);
+
+  initCurentDateTimeForSwitchOne(); //init date time for l1
+  initCurentDateTimeForSwitchtow(); //init date time for l2
+  initCurentDateTimeForSwitchthree(); //init date time for l3
+  initCurentDateTimeForSwitchfour(); //init date time for l4
 
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 
@@ -273,18 +303,19 @@ uint8_t ConnectwifiAndFirebase() {
 void handleFirebaseController () {
 
   AnswerUplink();  // check device is active
-  delay(500);
+  delay(100);
   handleSwitchChannelOne(); // handle switch L1
-  delay(500);
+  delay(100);
   handleSwitchChannelTwo(); //handle switch L2
-  delay(500);
-  setSchedulerTime(); // set scheduler time
-  delay(500);
-  Scheduler_L1();
-  Scheduler_L2();
-  Scheduler_L3();
-  Scheduler_L4();
-  delay(500);
+  delay(100);
+  scheduler_switch_L1(); //scheduler l1
+  delay(100);
+  scheduler_switch_L2(); //scheduler l2
+  delay(100);
+  scheduler_switch_L3(); //scheduler l3
+  delay(100);
+  scheduler_switch_L4(); //scheduler l4
+  delay(100);
 
 } // handle command switchLigth in Firebase
 
@@ -316,197 +347,365 @@ uplink = state_uplink;
 
 } // check if have uplink signal
 
+/*------------------------ scheduler function --------------------------------------------*/
 
-void Scheduler_L1() {
+void initCurentDateTimeForSwitchOne() {
 
-int h = hour(time_ch1);
-int mins = minute(time_ch1);
-int sec = second(time_ch1);
+init_day_for_l1 = day();
+init_month_for_l1 = month();
+init_yare_for_l1 = year() ;
 
-Alarm.alarmRepeat(h, mins, sec, switch_L1);
+} // init curent date time
 
-} // Scheduler L1
+void initCurentDateTimeForSwitchtow() {
+
+init_day_for_l2 = day();
+init_month_for_l2 = month();
+init_yare_for_l2 = year() ;
+
+} // init curent date time
+
+void initCurentDateTimeForSwitchthree() {
+
+init_day_for_l3 = day();
+init_month_for_l3 = month();
+init_yare_for_l3 = year() ;
+
+} // init curent date time
+
+void initCurentDateTimeForSwitchfour() {
+
+init_day_for_l4 = day();
+init_month_for_l4 = month();
+init_yare_for_l4 = year() ;
+
+} // init curent date time
 
 
-void Scheduler_L2() {
+void scheduler_switch_L1() {
 
-int h = hour(time_ch2);
-int mins = minute(time_ch2);
-int sec = second(time_ch2);
+  Serial.println("int l1");
 
-Alarm.alarmRepeat(h, mins, sec, switch_L2);
+  static bool scheduler_l1_isactived = false;
 
-} // Scheduler L2
-
-
-void Scheduler_L3() {
-
-int h = hour(time_ch3);
-int mins = minute(time_ch3);
-int sec = second(time_ch3);
-
-Alarm.alarmRepeat(h, mins, sec, switch_L3);
-
-} // Scheduler L3
-
-void Scheduler_L4() {
-
-int h = hour(time_ch4);
-int mins = minute(time_ch4);
-int sec = second(time_ch4);
-
-Alarm.alarmRepeat(h, mins, sec, switch_L4);
-
-} // Scheduler L4
-
-void switch_L1() {
-
-  uint8_t state_L1= Firebase.getInt(scheduler_status_channel_one_path);
-  static bool is_first_state_L1 = true;
+  bool l1_state = Firebase.getBool(scheduler_state_channel_one_path); // get sate one
   // handle error
   if (Firebase.failed()) {
-      Serial.print("get time L1 failed:");
+      Serial.print("get state switch L1 failed:");
       Serial.println(Firebase.error());
       return;
   }
 
-  if (is_first_state_L1) {
-  digitalWrite(D1,state_L1);
-  is_first_state_L1 = false;
-}else{
-  if (status_ch1 != state_L1) {
-    digitalWrite(D1,state_L1);
-    status_ch1 = state_L1;
-  }
+  if (l1_state) {
 
-}
+    if (!scheduler_l1_isactived) { //check scheduler is actived
 
-}
+          Serial.println("int scheduler l1 check actived");
 
-
-void switch_L2() {
-
-  uint8_t state_L2= Firebase.getInt(scheduler_status_channel_tow_path);
-  static bool is_first_state_L2 = true;
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print("get time L2 failed:");
-      Serial.println(Firebase.error());
-      return;
-  }
-
-  if (is_first_state_L2) {
-  digitalWrite(D2,state_L2);
-  is_first_state_L2 = false;
-}else{
-  if (status_ch2 != state_L2) {
-    digitalWrite(D2,state_L2);
-    status_ch2 = state_L2;
-  }
-
-}
-
-}
-
-void switch_L3() {
-
-  uint8_t state_L3= Firebase.getInt(scheduler_status_channel_three_path);
-  static bool is_first_state_L3 = true;
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print("get time L3 failed:");
-      Serial.println(Firebase.error());
-      return;
-  }
-
-  if (is_first_state_L3) {
-  digitalWrite(D3,state_L3);
-  is_first_state_L3 = false;
-}else{
-  if (status_ch3 != state_L3) {
-    digitalWrite(D3,state_L3);
-    status_ch3 = state_L3;
-  }
-
-}
-
-}
-
-
-void switch_L4() {
-
-  uint8_t state_L4= Firebase.getInt(scheduler_status_channel_four_path);
-  static bool is_first_state_L4 = true;
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print("get time L4 failed:");
-      Serial.println(Firebase.error());
-      return;
-  }
-
-  if (is_first_state_L4) {
-  digitalWrite(D4,state_L4);
-  is_first_state_L4 = false;
-}else{
-  if (status_ch4 != state_L4) {
-    digitalWrite(D4,state_L4);
-    status_ch4 = state_L4;
-  }
-
-}
-
-}
-
-
-void setSchedulerTime() {
-
-  long time_l1= Firebase.getInt(scheduler_time_channel_one_path);
-
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print("get time L1 failed:");
-      Serial.println(Firebase.error());
-      return;
-  }
-
-  time_ch1 = time_l1;
-
-  long time_l2= Firebase.getInt(scheduler_time_channel_tow_path);
-
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print("get time L2 failed:");
-      Serial.println(Firebase.error());
-      return;
-  }
-
-  time_ch2 = time_l2;
-
-    long time_l3= Firebase.getInt(scheduler_time_channel_three_path);
-
-    // handle error
-    if (Firebase.failed()) {
-        Serial.print("get time L3 failed:");
-        Serial.println(Firebase.error());
-        return;
-    }
-
-     time_ch3 = time_l3;
-
-      long time_l4= Firebase.getInt(scheduler_time_channel_four_path);
-
+      int scheduler_hour = Firebase.getInt(scheduler_time_hour_channel_one_path);
       // handle error
       if (Firebase.failed()) {
-          Serial.print("get time L4 failed:");
+          Serial.print("get hour switch L1 failed:");
           Serial.println(Firebase.error());
           return;
       }
 
-      time_ch4 = time_l4;
+      int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_one_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get minute switch L1 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
 
-}  // set scheduler
+      if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
+
+          Serial.println("switch on|of");
+
+        uint8_t status = Firebase.getInt(scheduler_status_channel_one_path);
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("get status switch L1 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+        digitalWrite(D1,status);  // send signal to delay one
+        scheduler_l1_isactived = true; //is actived
+
+        Firebase.setInt(status_channel_one_path,status); //state status to Firebase
+
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("set status switch L1 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+      } //check if scheduler is match
 
 
+    } else{
+
+        Serial.println("scheduler l1 is actived");
+
+      if (day() != init_day_for_l1 && month() != init_month_for_l1 && year() != init_yare_for_l1) {
+          scheduler_l1_isactived = false;
+          initCurentDateTimeForSwitchOne();
+      }
+
+    }
+
+  }  //check state
+
+
+} //scheduler ligth one
+
+
+void scheduler_switch_L2() {
+
+  Serial.println("int l2");
+
+  static bool scheduler_l2_isactived = false;
+
+  bool l2_state = Firebase.getBool(scheduler_state_channel_tow_path); // get sate one
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("get state switch L2 failed:");
+      Serial.println(Firebase.error());
+      return;
+  }
+
+  if (l2_state) {
+
+    if (!scheduler_l2_isactived) { //check scheduler is actived
+
+          Serial.println("int scheduler l2 check actived");
+
+      int scheduler_hour = Firebase.getInt(scheduler_time_hour_channel_tow_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get hour switch L2 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
+      int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_tow_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get minute switch L2 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
+      if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
+
+          Serial.println("switch l2 on|of");
+
+        uint8_t status = Firebase.getInt(scheduler_status_channel_tow_path);
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("get status switch L2 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+        digitalWrite(D2,status);  // send signal to delay one
+        scheduler_l2_isactived = true; //is actived
+
+        Firebase.setInt(status_channel_two_path,status); //state status to Firebase
+
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("set status switch L2 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+      } //check if scheduler is match
+
+
+    } else{
+
+        Serial.println("scheduler l2 is actived");
+
+      if (day() != init_day_for_l2 && month() != init_month_for_l2 && year() != init_yare_for_l2) {
+          scheduler_l2_isactived = false;
+          initCurentDateTimeForSwitchtow();
+      }
+
+    }
+
+  }  //check state
+
+
+} //scheduler ligth tow
+
+
+
+
+void scheduler_switch_L3() {
+
+  Serial.println("int l3");
+
+  static bool scheduler_l3_isactived = false;
+
+  bool l3_state = Firebase.getBool(scheduler_state_channel_three_path); // get sate one
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("get state switch L3 failed:");
+      Serial.println(Firebase.error());
+      return;
+  }
+
+  if (l3_state) {
+
+    if (!scheduler_l3_isactived) { //check scheduler is actived
+
+          Serial.println("int scheduler l3 check actived");
+
+      int scheduler_hour = Firebase.getInt(scheduler_time_hour_channel_three_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get hour switch L3 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
+      int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_three_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get minute switch L3 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
+      if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
+
+          Serial.println("switch l3 on|of");
+
+        uint8_t status = Firebase.getInt(scheduler_status_channel_three_path);
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("get status switch L3 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+        digitalWrite(D3,status);  // send signal to delay one
+        scheduler_l3_isactived = true; //is actived
+
+        Firebase.setInt(status_channel_three_path,status); //state status to Firebase
+
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("set status switch L3 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+      } //check if scheduler is match
+
+
+    } else{
+
+        Serial.println("scheduler l3 is actived");
+
+      if (day() != init_day_for_l3 && month() != init_month_for_l3 && year() != init_yare_for_l3) {
+          scheduler_l3_isactived = false;
+          initCurentDateTimeForSwitchthree();
+      }
+
+    }
+
+  }  //check state
+
+
+} //scheduler ligth three
+
+
+
+
+void scheduler_switch_L4() {
+
+  Serial.println("int l4");
+
+  static bool scheduler_l4_isactived = false;
+
+  bool l4_state = Firebase.getBool(scheduler_state_channel_four_path); // get sate one
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("get state switch L4 failed:");
+      Serial.println(Firebase.error());
+      return;
+  }
+
+  if (l4_state) {
+
+    if (!scheduler_l4_isactived) { //check scheduler is actived
+
+          Serial.println("int scheduler l4 check actived");
+
+      int scheduler_hour = Firebase.getInt(scheduler_time_hour_channel_four_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get hour switch L4 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
+      int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_four_path);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("get minute switch L4 failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
+      if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
+
+          Serial.println("switch l4 on|of");
+
+        uint8_t status = Firebase.getInt(scheduler_status_channel_four_path);
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("get status switch L4 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+        digitalWrite(D4,status);  // send signal to delay one
+        scheduler_l4_isactived = true; //is actived
+
+        Firebase.setInt(status_channel_four_path,status); //state status to Firebase
+
+        // handle error
+        if (Firebase.failed()) {
+            Serial.print("set status switch L4 failed:");
+            Serial.println(Firebase.error());
+            return;
+        }
+
+      } //check if scheduler is match
+
+
+    } else{
+
+        Serial.println("scheduler l4 is actived");
+
+      if (day() != init_day_for_l4 && month() != init_month_for_l4 && year() != init_yare_for_l4) {
+          scheduler_l4_isactived = false;
+          initCurentDateTimeForSwitchfour();
+      }
+
+    }
+
+  }  //check state
+
+
+} //scheduler ligth four
+
+/*----------------------------------------------------------------------------------------*/
 
 void handleSwitchChannelOne() {
 
