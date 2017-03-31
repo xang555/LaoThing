@@ -14,6 +14,7 @@
 #define AP_SSID "laothing-837548734"
 #define AP_PASSWORD "1234567890"
 #define SETTING_MODE  D0
+#define STATE_CONNECTION  D5
 
 String WIFI_SSID = "NODEMCU";
 String WIFI_PASSWORD = "nodemcu";
@@ -73,6 +74,7 @@ static int init_day_for_l4 = 30; // init day
 static int init_month_for_l4 = 3; // init month
 static int init_yare_for_l4 = 2017; //init yare
 
+static int count_connection_lose = 0; // count lose connection
 
 
 ESP8266WebServer server(80);
@@ -82,13 +84,14 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 60000);
 
 void setup() {
-Serial.begin(115200);
+Serial.begin(250000);
 //set pin mode
 pinMode(D1,OUTPUT);
 pinMode(D2,OUTPUT);
 pinMode(D3,OUTPUT);
 pinMode(D4,OUTPUT);
 pinMode(SETTING_MODE,INPUT);
+pinMode(STATE_CONNECTION,OUTPUT);
 
 } // setup
 
@@ -104,6 +107,7 @@ void loop() {
 
   case 0 :
     //setting wifi mode
+    digitalWrite(STATE_CONNECTION, LOW);
    state = SettingMode();
    Serial.println("setting mode");
 
@@ -140,6 +144,8 @@ void checkMode() {
 
       digitalWrite(D1,LOW); //trun off L1
       digitalWrite(D2,LOW);//trun off L2
+      digitalWrite(D3,LOW); //trun off L1
+      digitalWrite(D4,LOW);//trun off L2
 
       ESP.reset(); //reset
 
@@ -187,13 +193,14 @@ uint8_t AutoConnectWifiAndFirebase(){
   Serial.println(WiFi.localIP());
 
   timeClient.begin(); //time server
-
   setSyncProvider(getTimeNow);
-  setSyncInterval(3600);
+  setSyncInterval(1000 * 60 * 3600);
+
   initCurentDateTimeForSwitchOne(); //init date time for l1
   initCurentDateTimeForSwitchtow(); //init date time for l2
   initCurentDateTimeForSwitchthree(); //init date time for l3
   initCurentDateTimeForSwitchfour(); //init date time for l4
+
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH); //connect to Firebase
 
   return 2; //next state
@@ -286,7 +293,7 @@ uint8_t ConnectwifiAndFirebase() {
 
   timeClient.begin(); //time server
   setSyncProvider(getTimeNow);
-  setSyncInterval(3600);
+  setSyncInterval(1000 * 60 * 3600);
 
   initCurentDateTimeForSwitchOne(); //init date time for l1
   initCurentDateTimeForSwitchtow(); //init date time for l2
@@ -308,6 +315,10 @@ void handleFirebaseController () {
   delay(100);
   handleSwitchChannelTwo(); //handle switch L2
   delay(100);
+  handleSwitchChannelThree();
+  delay(100);
+  handleSwitchChannelFour();
+  delay(100);
   scheduler_switch_L1(); //scheduler l1
   delay(100);
   scheduler_switch_L2(); //scheduler l2
@@ -315,6 +326,8 @@ void handleFirebaseController () {
   scheduler_switch_L3(); //scheduler l3
   delay(100);
   scheduler_switch_L4(); //scheduler l4
+  delay(100);
+  checkConnection(); //check connection
   delay(100);
 
 } // handle command switchLigth in Firebase
@@ -346,6 +359,18 @@ uplink = state_uplink;
 }
 
 } // check if have uplink signal
+
+
+void checkConnection() {
+
+  if (count_connection_lose > 10) {
+    digitalWrite(STATE_CONNECTION, LOW);
+  }else{
+    digitalWrite(STATE_CONNECTION, HIGH);
+  }
+
+} //check connection to internet
+
 
 /*------------------------ scheduler function --------------------------------------------*/
 
@@ -393,8 +418,11 @@ void scheduler_switch_L1() {
   if (Firebase.failed()) {
       Serial.print("get state switch L1 failed:");
       Serial.println(Firebase.error());
+      count_connection_lose ++ ;
       return;
   }
+
+  count_connection_lose = 0;
 
   if (l1_state) {
 
@@ -407,16 +435,22 @@ void scheduler_switch_L1() {
       if (Firebase.failed()) {
           Serial.print("get hour switch L1 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
+
+      count_connection_lose = 0;
 
       int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_one_path);
       // handle error
       if (Firebase.failed()) {
           Serial.print("get minute switch L1 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
+
+      count_connection_lose = 0;
 
       if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
 
@@ -427,8 +461,11 @@ void scheduler_switch_L1() {
         if (Firebase.failed()) {
             Serial.print("get status switch L1 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
+
+        count_connection_lose = 0;
 
         digitalWrite(D1,status);  // send signal to delay one
         scheduler_l1_isactived = true; //is actived
@@ -439,8 +476,11 @@ void scheduler_switch_L1() {
         if (Firebase.failed()) {
             Serial.print("set status switch L1 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
+
+        count_connection_lose = 0;
 
       } //check if scheduler is match
 
@@ -473,8 +513,11 @@ void scheduler_switch_L2() {
   if (Firebase.failed()) {
       Serial.print("get state switch L2 failed:");
       Serial.println(Firebase.error());
+        count_connection_lose ++ ;
       return;
   }
+
+count_connection_lose = 0;
 
   if (l2_state) {
 
@@ -487,16 +530,22 @@ void scheduler_switch_L2() {
       if (Firebase.failed()) {
           Serial.print("get hour switch L2 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
+
+      count_connection_lose = 0;
 
       int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_tow_path);
       // handle error
       if (Firebase.failed()) {
           Serial.print("get minute switch L2 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
+
+      count_connection_lose = 0;
 
       if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
 
@@ -507,8 +556,11 @@ void scheduler_switch_L2() {
         if (Firebase.failed()) {
             Serial.print("get status switch L2 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
+
+        count_connection_lose = 0;
 
         digitalWrite(D2,status);  // send signal to delay one
         scheduler_l2_isactived = true; //is actived
@@ -519,8 +571,11 @@ void scheduler_switch_L2() {
         if (Firebase.failed()) {
             Serial.print("set status switch L2 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
+
+        count_connection_lose = 0;
 
       } //check if scheduler is match
 
@@ -555,9 +610,10 @@ void scheduler_switch_L3() {
   if (Firebase.failed()) {
       Serial.print("get state switch L3 failed:");
       Serial.println(Firebase.error());
+        count_connection_lose ++ ;
       return;
   }
-
+  count_connection_lose = 0;
   if (l3_state) {
 
     if (!scheduler_l3_isactived) { //check scheduler is actived
@@ -569,16 +625,22 @@ void scheduler_switch_L3() {
       if (Firebase.failed()) {
           Serial.print("get hour switch L3 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
+
+      count_connection_lose = 0;
 
       int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_three_path);
       // handle error
       if (Firebase.failed()) {
           Serial.print("get minute switch L3 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
+
+      count_connection_lose = 0;
 
       if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
 
@@ -589,9 +651,10 @@ void scheduler_switch_L3() {
         if (Firebase.failed()) {
             Serial.print("get status switch L3 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
-
+        count_connection_lose = 0;
         digitalWrite(D3,status);  // send signal to delay one
         scheduler_l3_isactived = true; //is actived
 
@@ -601,9 +664,10 @@ void scheduler_switch_L3() {
         if (Firebase.failed()) {
             Serial.print("set status switch L3 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
-
+        count_connection_lose = 0;
       } //check if scheduler is match
 
 
@@ -637,9 +701,10 @@ void scheduler_switch_L4() {
   if (Firebase.failed()) {
       Serial.print("get state switch L4 failed:");
       Serial.println(Firebase.error());
+        count_connection_lose ++ ;
       return;
   }
-
+count_connection_lose = 0;
   if (l4_state) {
 
     if (!scheduler_l4_isactived) { //check scheduler is actived
@@ -651,17 +716,19 @@ void scheduler_switch_L4() {
       if (Firebase.failed()) {
           Serial.print("get hour switch L4 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
-
+count_connection_lose = 0;
       int scheduler_minute = Firebase.getInt(scheduler_time_minute_channel_four_path);
       // handle error
       if (Firebase.failed()) {
           Serial.print("get minute switch L4 failed:");
           Serial.println(Firebase.error());
+            count_connection_lose ++ ;
           return;
       }
-
+count_connection_lose = 0;
       if (hour() >= scheduler_hour && minute() >= scheduler_minute) {
 
           Serial.println("switch l4 on|of");
@@ -671,9 +738,10 @@ void scheduler_switch_L4() {
         if (Firebase.failed()) {
             Serial.print("get status switch L4 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
-
+count_connection_lose = 0;
         digitalWrite(D4,status);  // send signal to delay one
         scheduler_l4_isactived = true; //is actived
 
@@ -683,9 +751,10 @@ void scheduler_switch_L4() {
         if (Firebase.failed()) {
             Serial.print("set status switch L4 failed:");
             Serial.println(Firebase.error());
+              count_connection_lose ++ ;
             return;
         }
-
+count_connection_lose = 0;
       } //check if scheduler is match
 
 
@@ -707,6 +776,7 @@ void scheduler_switch_L4() {
 
 /*----------------------------------------------------------------------------------------*/
 
+/*----------------------------- handle switch --------------------------------------------*/
 void handleSwitchChannelOne() {
 
     static uint8_t isactive_L1 = 0;
@@ -717,9 +787,10 @@ void handleSwitchChannelOne() {
   if (Firebase.failed()) {
       Serial.print("get status switch L1 failed:");
       Serial.println(Firebase.error());
+        count_connection_lose ++ ;
       return;
   }
-
+count_connection_lose = 0;
   if (isactive_L1 != state_L1) {
     digitalWrite(D1,state_L1);
     isactive_L1 = state_L1;
@@ -738,9 +809,10 @@ void handleSwitchChannelTwo() {
   if (Firebase.failed()) {
       Serial.print("get status switch L2 failed:");
       Serial.println(Firebase.error());
+        count_connection_lose ++ ;
       return;
   }
-
+count_connection_lose = 0;
   if (isactive_L2 != state_L2) {
     digitalWrite(D2,state_L2);
     isactive_L2 = state_L2;
@@ -748,17 +820,72 @@ void handleSwitchChannelTwo() {
 
 } // handle switch L2
 
+
+void handleSwitchChannelThree() {
+
+    static uint8_t isactive_L3 = 0;
+  //get status swwitch L1
+  uint8_t state_L3 = Firebase.getInt(status_channel_three_path);
+
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("get status switch L3 failed:");
+      Serial.println(Firebase.error());
+        count_connection_lose ++ ;
+      return;
+  }
+count_connection_lose = 0;
+  if (isactive_L3 != state_L3) {
+    digitalWrite(D3,state_L3);
+    isactive_L3 = state_L3;
+  }
+
+} // handle switch L1
+
+
+void handleSwitchChannelFour() {
+
+    static uint8_t isactive_L4 = 0;
+  //get status swwitch L1
+  uint8_t state_L4 = Firebase.getInt(status_channel_four_path);
+
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("get status switch L4 failed:");
+      Serial.println(Firebase.error());
+        count_connection_lose ++ ;
+      return;
+  }
+count_connection_lose = 0;
+  if (isactive_L4 != state_L4) {
+    digitalWrite(D4,state_L4);
+    isactive_L4 = state_L4;
+  }
+
+} // handle switch L1
+
+/*----------------------------------------------------------------------------------------*/
+
 long getTimeNow(){
 
   long ntp_time = 0;
 
    while (ntp_time < 1000000) {
+
+    if (count_connection_lose > 15) {
+      break;
+     }
+
      timeClient.update();
      ntp_time = timeClient.getEpochTime();
-     delay(1000);
+
+     ++count_connection_lose;
+     Serial.println("get time ...");
+     delay(100);
+
    }
 
-return ntp_time;
+  return ntp_time;
 
 } // get timestramp
 

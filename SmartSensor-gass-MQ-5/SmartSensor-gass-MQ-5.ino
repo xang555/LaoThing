@@ -12,6 +12,7 @@ gass sensor MQ-5
 #include <WiFiUdp.h>
 #include <utility>
 #include <vector>
+#include <TimeLib.h>
 
 // Set firebae information
 #define FIREBASE_HOST "laothing-d014b.firebaseio.com"
@@ -40,7 +41,7 @@ static uint8_t state_mode = 0; // 0 is autoconct ; 1 is setting mode
 static bool init_mode = true; // is init mode
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 10000);
+NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 60000);
 
 ESP8266WebServer server(80);
 bool looping = true;
@@ -49,8 +50,6 @@ void setup() {
 Serial.begin(115200);
 
 pinMode(SETTING_MODE,INPUT);
-
-timeClient.begin(); //time server
 
 } //set up
 
@@ -143,6 +142,11 @@ uint8_t AutoConnectWifiAndFirebase(){
   Serial.print("connected: ");
   Serial.println(WiFi.localIP());
 
+  timeClient.begin(); //time server
+
+  setSyncProvider(getTimeNow);
+  setSyncInterval(1800);
+  
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH); //connect to Firebase
 
   return 2; //next state
@@ -213,6 +217,11 @@ uint8_t ConnectwifiAndFirebase() {
   Serial.print("connected : ");
   Serial.println(WiFi.localIP());
 
+  timeClient.begin(); //time server
+
+  setSyncProvider(getTimeNow);
+  setSyncInterval(1800);
+
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 
   return 2;
@@ -225,8 +234,10 @@ void handleFirebaseSensor() {
 
   AnswerUplink(); // Answer uplink from mobile
 
-  float ratioSensorvalue = getSensorValue();
-  if (prev_ratioSensorvalue != ratioSensorvalue) {
+   float ratioSensorvalue = getSensorValue();
+   if (prev_ratioSensorvalue != ratioSensorvalue) {
+
+    Notification(ratioSensorvalue); // Notification
 
     Firebase.setFloat(update_sensorval_path, ratioSensorvalue); //update sensor value
     // handle error
@@ -236,13 +247,17 @@ void handleFirebaseSensor() {
         return;
     }
 
-    Firebase.setInt(update_time_path , getTimeNow()); //update time
+    if (timeStatus() != timeNotSet) {
 
-    // handle error
-    if (Firebase.failed()) {
-        Serial.print("update time failed:");
-        Serial.println(Firebase.error());
-        return;
+      Firebase.setInt(update_time_path , now()); //update time
+
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("update time failed:");
+          Serial.println(Firebase.error());
+          return;
+      }
+
     }
 
     prev_ratioSensorvalue = ratioSensorvalue;
@@ -311,13 +326,51 @@ if (error) {
 
 void Notification(float sensorval) {
 
+  static bool isCoNotify = false;
+  static uint8_t Co_repeatTime = 0;
+  static bool isLPGNotify = false;
+  static uint8_t LPG_repeatTime = 0;
+
   if (sensorval>= 2 && sensorval <= 4) { // CO gass alert code 500
+
+    if (Co_repeatTime > 1000) {
+      isCoNotify = false;
+    }
+
+    if (!isCoNotify) {
       alertMessage(CO_GASS_CODE);
+      isCoNotify = true;
+    }
+    Co_repeatTime++;
+
+    Serial.println("Co Gass");
+
   }else if (sensorval >= 0 && sensorval <= 1) { // LPG and CH4 gass alert code 200
+
+    if (LPG_repeatTime > 1000) {
+      isLPGNotify = false;
+    }
+
+    if (!isLPGNotify) {
       alertMessage(LPG_AND_CH4_GASS_CODE);
+      isLPGNotify = true;
+    }
+
+    LPG_repeatTime++;
+    Serial.println("LPG Gass");
+
+  }else { // Don't have condition
+
+    // set to default
+     isCoNotify = false;
+     Co_repeatTime = 0;
+     isLPGNotify = false;
+     LPG_repeatTime = 0;
+    Serial.println("Gass OK");
+
   }
 
-}
+} // notify message
 
 
 void AnswerUplink() {
@@ -375,9 +428,16 @@ float getSensorValue(){
 } // get gass sensor
 
 long getTimeNow(){
-timeClient.update();
 
-long timstramp = timeClient.getEpochTime();
-return timstramp;
-}
+  long ntp_time = 0;
+
+   while (ntp_time < 1000000) {
+     timeClient.update();
+     ntp_time = timeClient.getEpochTime();
+     delay(1000);
+   }
+
+return ntp_time;
+
+} // get timestramp
 
