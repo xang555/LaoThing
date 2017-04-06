@@ -19,9 +19,9 @@
 String WIFI_SSID = "NODEMCU";
 String WIFI_PASSWORD = "nodemcu";
 
-
-static uint8_t state_mode = 0; // 0 is autoconct ; 1 is setting mode
-static bool init_mode = true; // is init mode
+static bool manual_connect = false; // is manual connection
+static bool isCloseServer = false; // count lose connection
+static bool isInitFirebase = false;
 
 /*----------- init for l1 --------------*/
 static int init_day_for_l1 = 30; // init day
@@ -45,7 +45,6 @@ static int init_yare_for_l4 = 2017; //init yare
 
 static int count_connection_lose = 0; // count lose connection
 
-
 ESP8266WebServer server(80);
 bool looping = true;
 
@@ -67,31 +66,35 @@ pinMode(STATE_CONNECTION,OUTPUT);
 
 void loop() {
 
-  static uint8_t staterun = 0;
   static uint8_t state = 0;
-
-  checkMode(); //check mode
 
   switch(state) {
 
   case 0 :
-    //setting wifi mode
-    digitalWrite(STATE_CONNECTION, LOW);
-   state = SettingMode();
-   Serial.println("setting mode");
-
+    Serial.println("check Mode");
+    checkMode(state); //check mode
   break;
 
   case 1 :
-  //connect wifi
-  state = ConnectwifiAndFirebase();
-   Serial.println("connect wifi and firebase");
+    //auto connect wifi and firebase
+    Serial.println("auto connect wifi and firebase");
+   state = AutoConnectWifiAndFirebase();
+
+
   break;
 
   case 2 :
+  //connect wifi
+     Serial.println("connect wifi and firebase");
+     state = ConnectwifiAndFirebase();
+
+  break;
+
+  case 3 :
   //handle with firebase
-   handleFirebaseController();
    Serial.println("handle firebase");
+   handleFirebaseController(state);
+
   break;
 
   default :
@@ -103,78 +106,78 @@ void loop() {
 
 } // loop
 
-void checkMode() {
+void checkMode(uint8_t& state) {
 
-  if (!init_mode) {
+uint8_t mode = digitalRead(SETTING_MODE); // read mode
+int time_click_count = 0;
 
-    uint8_t mode = digitalRead(SETTING_MODE); // read mode
+while (mode == HIGH) {
 
-    if (state_mode != mode) {
+  time_click_count+=100;
 
-      digitalWrite(D1,LOW); //trun off L1
-      digitalWrite(D2,LOW);//trun off L2
-      digitalWrite(D3,LOW); //trun off L1
-      digitalWrite(D4,LOW);//trun off L2
+  if (time_click_count == 2000) {
 
-      ESP.reset(); //reset
+    digitalWrite(D1,LOW); //trun off L1
+    digitalWrite(D2,LOW);//trun off L2
+    digitalWrite(D3,LOW); //trun off L1
+    digitalWrite(D4,LOW);//trun off L2
 
-    }
+    digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
+    delay(100);
+    digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
+    delay(100);
+    digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
+    delay(100);
+    digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
 
-  }else {
-    state_mode = digitalRead(SETTING_MODE);  //init state mode
-    init_mode = false; // next step
+    looping = true;
+    state = CreateServerApi(); // create server api for setting mode
+
+    return;
+
   }
+
+mode = digitalRead(SETTING_MODE); // read mode
+
+delay(100);
+
+}
+
+state = 1;
 
 } // check mode
 
 
-uint8_t SettingMode(){
-   Serial.println("Enter Mode : ");
-   while(true) {
-    uint8_t state = digitalRead(SETTING_MODE);
-    if(state == HIGH) { // if mode is setting wifi connection
-    CreateServerApi(); // create server api for setting mode
-    return 1;
-    }
-    if(state == LOW) { // if mode is connect to firebase
-     return AutoConnectWifiAndFirebase();
-    }
+bool isEnterOfflineMode(){
 
-  delay(100);
+uint8_t mode = digitalRead(SETTING_MODE); // read mode
+if (mode == HIGH) {
+  return true;
+}
 
-   } // looping setting
+return false;
 
-} // setting mode
+} // siwtch mode
 
 
 uint8_t AutoConnectWifiAndFirebase(){
 
   WiFi.setAutoConnect(true);
   Serial.print("connecting");
+
   while (WiFi.status() != WL_CONNECTED) {
-    checkMode(); //check mode
+    if (isEnterOfflineMode()) {
+         return 0;
+    }
     Serial.print(".");
     delay(500);
   }
 
-  Serial.println();
-  Serial.print("connected: ");
-  Serial.println(WiFi.localIP());
+initwhenConnectedWifiAndFirebase(); // connected wifi
 
-  timeClient.begin(); //time server
-  setSyncProvider(getTimeNow);
-  setSyncInterval(1000 * 60 * 3600);
+  return 3; //handle Firebase
 
-  initCurentDateTimeForSwitchOne(); //init date time for l1
-  initCurentDateTimeForSwitchtow(); //init date time for l2
-  initCurentDateTimeForSwitchthree(); //init date time for l3
-  initCurentDateTimeForSwitchfour(); //init date time for l4
-
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH); //connect to Firebase
-
-  return 2; //next state
 } //auto connect wifi and Firebase
-
 
 uint8_t CreateServerApi() {
 
@@ -184,6 +187,8 @@ uint8_t CreateServerApi() {
 
           server.on("/setting",HTTP_POST,handleSetting);
           server.on("/controller", HTTP_POST, handleSwitchController);
+          server.on("/close", HTTP_GET,handleCloseServer);
+
           server.onNotFound([](){
             server.send(200,"text/html","<h2>Not Found</h2>");
             });
@@ -196,11 +201,16 @@ uint8_t CreateServerApi() {
           Serial.println("HTTP server started");
 
             while(looping) {
-            checkMode(); //check mode
             server.handleClient();
             Serial.println("handle clien");
             delayMicroseconds(100);
            }
+
+       if (isCloseServer) {
+           return 1;
+         }
+
+         return 2;
 
 } //create server api for mode setting wifi
 
@@ -223,16 +233,31 @@ void handleSwitchController() {
 
 } // handle switch in mode offline
 
+
+void handleCloseServer() {
+
+  server.send(200,"application/json","{ \"state\" : \"close Server\" }");
+
+  delay(500);
+  looping = false;
+  isCloseServer = true;
+  WiFi.softAPdisconnect(true);
+  server.close();
+
+} // close server offline api
+
+
 void handleSetting(){
 
-String Str_ssid = server.arg("ssid");
-String Str_password = server.arg("passwd");
+  String Str_ssid = server.arg("ssid");
+  String Str_password = server.arg("passwd");
 
   WIFI_SSID = Str_ssid;
   WIFI_PASSWORD = Str_password;
   server.send(200,"application/json","{ \"stat\" : \"ok\" }");
   delay(500);
   looping = false;
+  isCloseServer = false;
   WiFi.softAPdisconnect(true);
   server.close();
 
@@ -249,13 +274,32 @@ uint8_t ConnectwifiAndFirebase() {
   Serial.println(ssid);
   Serial.println(passwd);
 
+  //disconnect wifi
+  WiFi.disconnect(true);
+  
   // connect to wifi.
   WiFi.begin(ssid, passwd);
   Serial.print("connecting");
+
   while (WiFi.status() != WL_CONNECTED) {
+
+    if (isEnterOfflineMode()) {
+         return 0;
+    }
+
     Serial.print(".");
     delay(500);
   }
+
+initwhenConnectedWifiAndFirebase(); // connected wifi
+
+  return 3;
+
+} //connect wifi and Firebase
+
+
+void initwhenConnectedWifiAndFirebase() {
+
   Serial.println();
   Serial.print("connected: ");
   Serial.println(WiFi.localIP());
@@ -269,35 +313,40 @@ uint8_t ConnectwifiAndFirebase() {
   initCurentDateTimeForSwitchthree(); //init date time for l3
   initCurentDateTimeForSwitchfour(); //init date time for l4
 
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  if (!isInitFirebase) {
+    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+    isInitFirebase = true;
+  }
 
-  return 2;
-
-} //connect wifi and Firebase
+} // init when connected to wifi  and Firebase
 
 
-void handleFirebaseController () {
+void handleFirebaseController (uint8_t& state) {
+
+while (true) {
+
+  if (isEnterOfflineMode()) {
+      state = 0 ;
+      return;
+  }
 
   AnswerUplink();  // check device is active
-  delay(100);
+
   handleSwitchChannelOne(); // handle switch L1
-  delay(100);
   handleSwitchChannelTwo(); //handle switch L2
-  delay(100);
   handleSwitchChannelThree();
-  delay(100);
   handleSwitchChannelFour();
-  delay(100);
+
   scheduler_switch_L1(); //scheduler l1
-  delay(100);
   scheduler_switch_L2(); //scheduler l2
-  delay(100);
   scheduler_switch_L3(); //scheduler l3
-  delay(100);
   scheduler_switch_L4(); //scheduler l4
-  delay(100);
+
   checkConnection(); //check connection
+
   delay(100);
+
+}
 
 } // handle command switchLigth in Firebase
 
@@ -857,3 +906,4 @@ long getTimeNow(){
   return ntp_time;
 
 } // get timestramp
+
