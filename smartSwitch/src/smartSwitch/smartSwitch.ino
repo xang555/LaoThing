@@ -123,11 +123,11 @@ while (mode == HIGH) {
     digitalWrite(D4,LOW);//trun off L2
 
     digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
-    delay(100);
+    delay(200);
     digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
-    delay(100);
+    delay(200);
     digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
-    delay(100);
+    delay(200);
     digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
 
     looping = true;
@@ -276,7 +276,7 @@ uint8_t ConnectwifiAndFirebase() {
 
   //disconnect wifi
   WiFi.disconnect(true);
-  
+
   // connect to wifi.
   WiFi.begin(ssid, passwd);
   Serial.print("connecting");
@@ -363,7 +363,7 @@ if (Firebase.failed()) {
 }
 
 if (state_uplink != uplink) {
-uint8_t ack = rand();
+uint8_t ack = state_uplink;
 Firebase.setInt(ack_path,ack);
 // handle error
 if (Firebase.failed()) {
@@ -799,7 +799,7 @@ void handleSwitchChannelOne() {
 
     static uint8_t isactive_L1 = 0;
   //get status swwitch L1
-  uint8_t state_L1 = Firebase.getInt(status_channel_one_path);
+  uint8_t state_L1 = Firebase.getInt(status_channel_one_path+"/status");
 
   // handle error
   if (Firebase.failed()) {
@@ -812,6 +812,14 @@ count_connection_lose = 0;
   if (isactive_L1 != state_L1) {
     digitalWrite(D1,state_L1);
     isactive_L1 = state_L1;
+    Firebase.setInt(status_channel_one_path+"/ack", state_L1);
+    if (Firebase.failed()) {
+        Serial.print("set ack switch L1 failed:");
+        Serial.println(Firebase.error());
+          count_connection_lose ++ ;
+        return;
+    }
+
   }
 
 } // handle switch L1
@@ -821,7 +829,7 @@ void handleSwitchChannelTwo() {
 
     static uint8_t isactive_L2 = 0;
   //get status swwitch L2
-  uint8_t state_L2 = Firebase.getInt(status_channel_two_path);
+  uint8_t state_L2 = Firebase.getInt(status_channel_two_path+"/status");
 
   // handle error
   if (Firebase.failed()) {
@@ -834,6 +842,13 @@ count_connection_lose = 0;
   if (isactive_L2 != state_L2) {
     digitalWrite(D2,state_L2);
     isactive_L2 = state_L2;
+    Firebase.setInt(status_channel_two_path+"/ack", state_L2);
+    if (Firebase.failed()) {
+        Serial.print("set ack switch L2 failed:");
+        Serial.println(Firebase.error());
+          count_connection_lose ++ ;
+        return;
+    }
   }
 
 } // handle switch L2
@@ -843,7 +858,7 @@ void handleSwitchChannelThree() {
 
     static uint8_t isactive_L3 = 0;
   //get status swwitch L1
-  uint8_t state_L3 = Firebase.getInt(status_channel_three_path);
+  uint8_t state_L3 = Firebase.getInt(status_channel_three_path+"/status");
 
   // handle error
   if (Firebase.failed()) {
@@ -856,6 +871,13 @@ count_connection_lose = 0;
   if (isactive_L3 != state_L3) {
     digitalWrite(D3,state_L3);
     isactive_L3 = state_L3;
+    Firebase.setInt(status_channel_three_path+"/ack", state_L3);
+    if (Firebase.failed()) {
+        Serial.print("set ack switch L3 failed:");
+        Serial.println(Firebase.error());
+          count_connection_lose ++ ;
+        return;
+    }
   }
 
 } // handle switch L1
@@ -865,7 +887,7 @@ void handleSwitchChannelFour() {
 
     static uint8_t isactive_L4 = 0;
   //get status swwitch L1
-  uint8_t state_L4 = Firebase.getInt(status_channel_four_path);
+  uint8_t state_L4 = Firebase.getInt(status_channel_four_path+"/status");
 
   // handle error
   if (Firebase.failed()) {
@@ -878,6 +900,15 @@ count_connection_lose = 0;
   if (isactive_L4 != state_L4) {
     digitalWrite(D4,state_L4);
     isactive_L4 = state_L4;
+
+    Firebase.setInt(status_channel_four_path+"/ack", state_L4);
+    if (Firebase.failed()) {
+        Serial.print("set ack switch L4 failed:");
+        Serial.println(Firebase.error());
+          count_connection_lose ++ ;
+        return;
+    }
+
   }
 
 } // handle switch L1
@@ -906,4 +937,3 @@ long getTimeNow(){
   return ntp_time;
 
 } // get timestramp
-
