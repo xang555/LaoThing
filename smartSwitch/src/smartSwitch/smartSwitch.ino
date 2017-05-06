@@ -201,6 +201,9 @@ uint8_t CreateServerApi() {
           Serial.println("HTTP server started");
 
             while(looping) {
+              if (isEnterOfflineMode()) {
+                   return 0;
+              }
             server.handleClient();
             Serial.println("handle clien");
             delayMicroseconds(100);
@@ -218,6 +221,8 @@ void handleSwitchController() {
 
   String switchname = server.arg("swn");
   uint8_t cmd = server.arg("cmd").toInt();
+
+  Serial.println(server.arg("cmd"));
 
   if (switchname == "L1") {
     digitalWrite(D1,cmd);
@@ -920,6 +925,10 @@ long getTimeNow(){
   long ntp_time = 0;
 
    while (ntp_time < 1000000) {
+
+     if (isEnterOfflineMode()) {
+          return 0;
+     }
 
     if (count_connection_lose > 15) {
       break;
