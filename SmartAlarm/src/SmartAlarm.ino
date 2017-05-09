@@ -4,7 +4,6 @@
 #include <FirebaseArduino.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPClient.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include "FirebasePath.h"
@@ -17,8 +16,8 @@
 #define AP_PASSWORD "12345678"
 #define SETTING_MODE  D0
 #define STATE_CONNECTION  D5
-#define DHTPIN D4
-#define DHTTYPE DHT22
+#define SPAEKER_PIN D4
+
 
 String WIFI_SSID = "NODEMCU";
 String WIFI_PASSWORD = "nodemcu";
@@ -28,11 +27,7 @@ static bool isCloseServer = false; // count lose connection
 static bool isInitFirebase = false;
 
 static int count_connection_lose = 0; // count lose connection
-
-float m = -0.318; //Slope
-float b = 1.133; //Y-Intercept
-float R0 = 11.820; //Sensor Resistance in fresh air from previous code
-int gas_sensor = A0; //Sensor pin
+static int count_alert_time = 0;
 
 ESP8266WebServer server(80);
 bool looping = true;
@@ -45,7 +40,9 @@ Serial.begin(250000);
 //set pin mode
 pinMode(SETTING_MODE,INPUT);
 pinMode(STATE_CONNECTION,OUTPUT);
- pinMode(gas_sensor, INPUT); //Set gas sensor as input
+pinMode(SPAEKER_PIN, OUTPUT);
+
+digitalWrite(SPAEKER_PIN,LOW);
 
 } // setup
 
@@ -279,7 +276,7 @@ while (true) {
   }
 
   AnswerUplink();  // check device is active
-  handleGasSensor(); // send sensor value to Firebase
+  handleSmartLarm(); // send sensor value to Firebase
   checkConnection(); //check connection
   delay(100);
 
@@ -319,75 +316,48 @@ uplink = state_uplink;
 
 /*------------- Handle Temp and Humi Sensor ------------*/
 
-void handleGasSensor() {
+void handleSmartLarm() {
 
-  double ppm = getSensorValue();
- static int repeatTime = 0;
- static bool isNotify = false;
+static bool is_alert = false;
+bool alert = Firebase.getBool(alert_path);
+// handle error
+if (Firebase.failed()) {
+    Serial.print("get alert path failed");
+    Serial.println(Firebase.error());
+    return;
+}
 
-  if (ppm > 2000) {
-
-    if (repeatTime > 100) {
-      isNotify = false;
-    }
-
-    if (!isNotify) {
-        AlertNotification(); //send fcm
-        isNotify = true;
-    }
-
-    repeatTime ++;
-
+if (alert) {
+  if (!is_alert) {
+    digitalWrite(SPAEKER_PIN,HIGH);
+    is_alert = true;
   }
+  TimerAlert(); // timeer alert
+}else {
+digitalWrite(SPAEKER_PIN,LOW);
+is_alert = false;
+count_alert_time = 0;
+}
 
 } //handle Sensor
 
-void AlertNotification() {
 
-      HTTPClient http;
-      http.begin(fcm_server); // url test server api
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-      http.addHeader("Authorization", fcm_server_key);
-      String payload = "sdid="+DEVICE_ID;
-      int httpCode =  http.sendRequest("POST",payload);
+void TimerAlert() {
 
-  if (httpCode > 0 ) {
+if (count_alert_time >=50) {
+Firebase.setBool(alert_path, false);
+// handle error
+if (Firebase.failed()) {
+    Serial.print("Update alert path failed");
+    Serial.println(Firebase.error());
+    return;
+}
 
-  if (httpCode == HTTP_CODE_OK) {
-     Serial.println(http.getString());
-   }else{
-     Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
-   }
+}
 
-   http.end();
+count_alert_time ++;
 
- }else {
-   count_connection_lose++;
- }
-
-
-} //alert notification
-
-
-double getSensorValue(){
-
-  float sensor_volt; //Define variable for sensor voltage
-  float RS_gas; //Define variable for sensor resistance
-  float ratio; //Define variable for ratio
-  float sensorValue = analogRead(gas_sensor); //Read analog values of sensor
-
-  sensor_volt = sensorValue * (5.0 / 1023.0); //Convert average to voltage
-  RS_gas = ((5.0 * 10.0) / sensor_volt) - 10.0; //Calculate RS in fresh air
-  ratio = RS_gas / R0;   // Get ratio RS_gas/RS_air
-
-  double ppm_log = (log10(ratio) - b) / m; //Get ppm value in linear scale according to the the ratio value
-  double ppm = pow(10, ppm_log); //Convert ppm value to log scale
-  double percentage = ppm / 10000; //Convert to percentage
-
-  return ppm;
-
-} // get gass sensor
-
+} // timeer alert
 
 
 void checkConnection() {
