@@ -31,7 +31,7 @@ static int count_connection_lose = 0; // count lose connection
 
 float m = -0.318; //Slope
 float b = 1.133; //Y-Intercept
-float R0 = 11.820; //Sensor Resistance in fresh air from previous code
+float R0 = 38.55; //Sensor Resistance in fresh air from previous code
 int gas_sensor = A0; //Sensor pin
 
 ESP8266WebServer server(80);
@@ -39,13 +39,16 @@ bool looping = true;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 60000);
+HTTPClient http;
 
 void setup() {
 Serial.begin(250000);
 //set pin mode
 pinMode(SETTING_MODE,INPUT);
 pinMode(STATE_CONNECTION,OUTPUT);
- pinMode(gas_sensor, INPUT); //Set gas sensor as input
+pinMode(gas_sensor, INPUT); //Set gas sensor as input
+
+ // http.setReuse(true);
 
 } // setup
 
@@ -322,6 +325,7 @@ uplink = state_uplink;
 void handleGasSensor() {
 
   double ppm = getSensorValue();
+  Serial.println(ppm);
  static int repeatTime = 0;
  static bool isNotify = false;
 
@@ -344,8 +348,7 @@ void handleGasSensor() {
 
 void AlertNotification() {
 
-      HTTPClient http;
-      http.begin(fcm_server); // url test server api
+      http.begin(fcm_server,"A3 41 68 37 4D 94 36 8D 01 2C 68 49 05 58 D2 CC 0E 0B DE F4"); // url test server api
       http.addHeader("Content-Type", "application/x-www-form-urlencoded");
       http.addHeader("Authorization", fcm_server_key);
       String payload = "sdid="+DEVICE_ID;
@@ -376,13 +379,13 @@ double getSensorValue(){
   float ratio; //Define variable for ratio
   float sensorValue = analogRead(gas_sensor); //Read analog values of sensor
 
-  sensor_volt = sensorValue * (5.0 / 1023.0); //Convert average to voltage
-  RS_gas = ((5.0 * 10.0) / sensor_volt) - 10.0; //Calculate RS in fresh air
+  sensor_volt = sensorValue * (5.0 / 1024.0); //Convert average to voltage
+  RS_gas = ((5.0 * 20.0) / sensor_volt) - 20.0; //Calculate RS in fresh air
   ratio = RS_gas / R0;   // Get ratio RS_gas/RS_air
 
   double ppm_log = (log10(ratio) - b) / m; //Get ppm value in linear scale according to the the ratio value
   double ppm = pow(10, ppm_log); //Convert ppm value to log scale
-  double percentage = ppm / 10000; //Convert to percentage
+  //double percentage = ppm / 10000; //Convert to percentage
 
   return ppm;
 
