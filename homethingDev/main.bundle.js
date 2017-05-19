@@ -25,8 +25,7 @@ var AddComponent = (function () {
         this.formBuild = formBuild;
         this.addService = addService;
         this.addForm = this.formBuild.group({
-            sdid: ['', [__WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].required, __WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].minLength(13), __WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].maxLength(13)]],
-            sharecode: ['', [__WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].required, __WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].minLength(8), __WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].maxLength(8)]],
+            sdid: ['', [__WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].required, __WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].minLength(13), __WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].maxLength(15)]],
             dtype: ['', [__WEBPACK_IMPORTED_MODULE_1__angular_forms__["g" /* Validators */].required]]
         });
         this.added = false;
@@ -97,7 +96,6 @@ var HomeComponent = (function () {
         this.editText = [];
         this.hqr = [];
         this.editQr = [];
-        this.confirm = [];
         this.fDType = this.formBuider.group({
             dType: ['']
         });
@@ -113,11 +111,24 @@ var HomeComponent = (function () {
             if (success.err === 0) {
                 /*          console.log(success.devices);*/
                 for (var i = 0; i < success.devices.length; i++) {
+                    /**Set picture for every divices*/
+                    if (success.devices[i]['type'] === 0) {
+                        success.devices[i]['image'] = '../../assets/images/s_switch.png';
+                    }
+                    else if (success.devices[i]['type'] === 1) {
+                        success.devices[i]['image'] = '../../assets/images/s_temperature.png';
+                    }
+                    else if (success.devices[i]['type'] === 2) {
+                        success.devices[i]['image'] = '../../assets/images/s_gass_sensor.png';
+                    }
+                    else if (success.devices[i]['type'] === 3) {
+                        success.devices[i]['image'] = '../../assets/images/s_alarm.png';
+                    }
+                    /**Set right logic for menu*/
                     _this.editText.push('Edit');
                     _this.check[i] = false;
                     _this.editQr.push('QR code');
                     _this.hqr[i] = false;
-                    _this.confirm[i] = false;
                 }
                 /*          console.log(this.editText);
                  console.log(this.check);*/
@@ -186,12 +197,6 @@ var HomeComponent = (function () {
             _this.checkbtn(index);
             _this.fDType.reset();
         });
-    };
-    HomeComponent.prototype.confirmbtn = function (index) {
-        this.confirm[index] = !this.confirm[index];
-    };
-    HomeComponent.prototype.noconfirm = function (index) {
-        this.confirm[index] = !this.confirm[index];
     };
     HomeComponent.prototype.deleteDevice = function (curDevice) {
         var _this = this;
@@ -911,7 +916,7 @@ exports = module.exports = __webpack_require__(33)(false);
 
 
 // module
-exports.push([module.i, "\r\n.led {\r\n    color: red;\r\n    right: 10px;\r\n    top: 20px;\r\n    position: absolute;\r\n\r\n}\r\n\r\nmd-card {\r\n    margin: 0.5rem;\r\n}\r\n\r\n.btn-fab {\r\n    position: fixed;\r\n    right: 20px;\r\n    bottom: 20px;\r\n}\r\n\r\nmd-grid-tile {\r\n    margin-top: 5rem;\r\n\r\n}\r\n\r\n.savebtn {\r\n    right: 0;\r\n    bottom: 0;\r\n}\r\n\r\n.selectDevice {\r\n\r\n}\r\n\r\n.confirmbox {\r\n    text-align: center;\r\n    -webkit-box-flex: 1;\r\n        -ms-flex: auto;\r\n            flex: auto;\r\n    position: absolute;\r\n    top: 8rem;\r\n    background-color: #9E9E9E;\r\n    color: white;\r\n\r\n\r\n}\r\n#ycon {\r\n    background-color: #2E7D32;\r\n    color: white;\r\n}\r\n#ncon {\r\n    background-color: #F44336;\r\n    color: white;\r\n}", ""]);
+exports.push([module.i, "\r\n.led {\r\n  color: red;\r\n  right: 10px;\r\n  top: 20px;\r\n  position: absolute;\r\n\r\n}\r\n\r\nmd-card {\r\n margin: 0.5rem;\r\n}\r\n\r\n\r\n.btn-fab {\r\n  position: fixed;\r\n  right: 20px;\r\n  bottom: 20px;\r\n}\r\n\r\n\r\nmd-grid-tile {\r\n  margin-top: 5rem;\r\n\r\n}\r\n\r\n.savebtn {\r\n  right: 0;\r\n  bottom: 0;\r\n}\r\n\r\n.selectDevice{\r\n\r\n}\r\n", ""]);
 
 // exports
 
@@ -929,7 +934,7 @@ exports = module.exports = __webpack_require__(33)(false);
 
 
 // module
-exports.push([module.i, ".cardLogin {\r\n margin-top: 5rem;\r\n}\r\n#login {\r\n  background-color: #F44336;\r\n  color: white;\r\n  width: 50%;\r\n  left: 25%;\r\n\r\n}\r\nmd-input-container {\r\n  width: 100%;\r\n}\r\nh1 {\r\n  text-align: center;\r\n}\r\n\r\n#validateLogin {\r\n  color: red;\r\n  font-size: large;\r\n}\r\n", ""]);
+exports.push([module.i, ".cardLogin {\r\n margin-top: 5rem;\r\n}\r\n#login {\r\n  background-color: red;\r\n  color: white;\r\n  width: 50%;\r\n  left: 25%;\r\n\r\n}\r\nmd-input-container {\r\n  width: 100%;\r\n}\r\nh1 {\r\n  text-align: center;\r\n}\r\n\r\n#validateLogin {\r\n  color: red;\r\n  font-size: large;\r\n}\r\n", ""]);
 
 // exports
 
@@ -942,7 +947,7 @@ module.exports = module.exports.toString();
 /***/ 279:
 /***/ (function(module, exports) {
 
-module.exports = "<md-grid-list cols=\"1\" rowHeight=\"600px\">\n\n\n\n  <md-grid-tile>\n    <md-card class=\"cardAdd\">\n      <md-card-title>\n        <h1>Add Device</h1>\n      </md-card-title>\n      <app-qrcode *ngIf=\"added\" [qrcode]=\"qrcode\"></app-qrcode>\n\n      <form [formGroup]=\"addForm\" (submit)=\"addDevice()\" *ngIf=\"!added\">\n      <md-input-container>\n        <input type=\"text\" mdInput placeholder=\"Smart Device ID\" formControlName=\"sdid\">\n        <md-hint>(13 Characters)</md-hint>\n      </md-input-container>\n        <md-input-container>\n          <input type=\"text\" mdInput placeholder=\"Device Code\" formControlName=\"sharecode\">\n          <md-hint>(8 Characters)</md-hint>\n        </md-input-container>\n\n        <md-select placeholder=\"Select device Name\" formControlName=\"dtype\">\n          <md-option value=\"0\">Smart swtich</md-option>\n          <md-option value=\"1\">Smart sensor humidity and temperature</md-option>\n          <md-option value=\"2\">Gass sensor</md-option>\n          <md-option value=\"3\">Smart alarm</md-option>\n        </md-select>\n\n      <div id=\"void\">\n\n      </div>\n      <md-card-actions>\n        <button md-raised-button id=\"btnadd\" type=\"submit\">Add</button>\n      </md-card-actions>\n      </form>\n    </md-card>\n  </md-grid-tile>\n</md-grid-list>\n\n\n"
+module.exports = "<md-grid-list cols=\"1\" rowHeight=\"600px\">\n\n\n\n  <md-grid-tile>\n    <md-card class=\"cardAdd\">\n      <md-card-title>\n        <h1>Add Device</h1>\n      </md-card-title>\n      <app-qrcode *ngIf=\"added\" [qrcode]=\"qrcode\"></app-qrcode>\n\n      <form [formGroup]=\"addForm\" (submit)=\"addDevice()\" *ngIf=\"!added\">\n      <md-input-container>\n        <input type=\"text\" mdInput placeholder=\"Device ID\" formControlName=\"sdid\">\n        <md-hint>(13 - 15 Characters)</md-hint>\n      </md-input-container>\n\n        <md-select placeholder=\"Select device Name\" formControlName=\"dtype\">\n          <md-option value=\"0\">Smart swtich</md-option>\n          <md-option value=\"1\">Smart sensor humidity and temperature</md-option>\n          <md-option value=\"2\">Gass sensor</md-option>\n          <md-option value=\"3\">Smart alarm</md-option>\n        </md-select>\n\n      <div id=\"void\">\n\n      </div>\n      <md-card-actions>\n        <button md-raised-button id=\"btnadd\" type=\"submit\">Add</button>\n      </md-card-actions>\n      </form>\n    </md-card>\n  </md-grid-tile>\n</md-grid-list>\n\n\n"
 
 /***/ }),
 
@@ -956,7 +961,7 @@ module.exports = "<md-toolbar color=\"primary\">\n  <span fxFlex=\"50\">Homethin
 /***/ 281:
 /***/ (function(module, exports) {
 
-module.exports = "<md-grid-list cols=\"{{cols}}\" rowHeight=\"400px\">\n\n    <md-grid-tile *ngFor=\"let device of devices; let i = index\">\n\n        <md-card>\n            <md-card-header>\n\n                <button md-icon-button [mdMenuTriggerFor]=\"menu\" class=\"menu\">\n                    <md-icon>more_vert</md-icon>\n                </button>\n\n                <md-menu #menu=\"mdMenu\">\n\n                    <button md-menu-item (click)=\"confirmbtn(i)\">\n                        <md-icon>delete_forever</md-icon>\n                        <span>Delete</span>\n                    </button>\n                    <button md-menu-item (click)=\"checkbtn(i)\">\n                        <md-icon>mode_edit</md-icon>\n                        <span>{{editText[i]}}</span>\n                    </button>\n                    <button md-menu-item (click)=\"qrState(i)\">\n                        <md-icon>filter_center_focus</md-icon>\n                        <span>{{editQr[i]}}</span>\n                    </button>\n                    <button md-menu-item>\n                        <md-icon>vpn_key</md-icon>\n                        <span *ngIf=\"!check[i]\">SC:{{device.sharecode}}</span>\n                    </button>\n\n\n                </md-menu>\n                <p *ngIf=\"!check[i]\">ID:{{device.sdid}}</p>\n            </md-card-header>\n            <app-qrcode [qrcode]=\"device.sdid\" *ngIf=\"hqr[i]\"></app-qrcode>\n            <div class=\"confirmbox\" *ngIf=\"confirm[i]\">\n                <h3>Confirm ?</h3>\n                <button md-button id=\"ycon\" (click)=\"deleteDevice(device)\">YES</button>\n                <button md-button id=\"ncon\" (click)=\"noconfirm(i)\">NO</button>\n\n            </div>\n            <img *ngIf=\"!hqr[i]\" src=\"http://placehold.it/250x250\" md-card-image alt=\"\">\n            <md-card-content>\n                <h3 *ngIf=\"!check[i]\">{{device.nicname}}</h3>\n                <form novalidate [formGroup]=\"fDType\" *ngIf=\"check[i]\">\n                    <md-select placeholder=\"Select device Name\" class=\"selectDevice\" formControlName=\"dType\"\n                               (change)=\"editDevice(device,i)\">\n                        <md-option value=\"0\">Smart swtich</md-option>\n                        <md-option value=\"1\">Smart sensor humidity and temperature</md-option>\n                        <md-option value=\"2\">Gass sensor</md-option>\n                        <md-option value=\"3\">Smart alarm</md-option>\n                    </md-select>\n                </form>\n            </md-card-content>\n\n\n        </md-card>\n    </md-grid-tile>\n\n    <button md-fab class=\"btn-fab\" class=\"btn-fab\" (click)=\"add()\">\n        <md-icon>add</md-icon>\n    </button>\n</md-grid-list>\n\n\n\n"
+module.exports = "<md-grid-list cols=\"{{cols}}\" rowHeight=\"400px\">\n\n    <md-grid-tile *ngFor=\"let device of devices; let i = index\">\n\n        <md-card>\n            <md-card-header>\n                <button md-icon-button [mdMenuTriggerFor]=\"menu\" class=\"menu\">\n                    <md-icon>more_vert</md-icon>\n                </button>\n\n                <md-menu #menu=\"mdMenu\">\n                    <button md-menu-item (click)=\"deleteDevice(device)\">\n                        <md-icon>delete_forever</md-icon>\n                        <span>Delete</span>\n                    </button>\n                    <button md-menu-item (click)=\"checkbtn(i)\">\n                        <md-icon>mode_edit</md-icon>\n                        <span>{{editText[i]}}</span>\n                    </button>\n                  <button md-menu-item (click)=\"qrState(i)\">\n                    <md-icon>filter_center_focus</md-icon>\n                    <span>{{editQr[i]}}</span>\n                  </button>\n\n                </md-menu>\n            </md-card-header>\n              <app-qrcode [qrcode]=\"device.sdid\" *ngIf=\"hqr[i]\"></app-qrcode>\n            <img *ngIf=\"!hqr[i]\" [src]=\"device.image\" md-card-image alt=\"\">\n            <md-card-content>\n              <h3 *ngIf=\"!check[i]\">{{device.nicname}}</h3>\n              <form novalidate [formGroup]=\"fDType\" *ngIf=\"check[i]\">\n                <md-select placeholder=\"Select device Name\" class=\"selectDevice\" formControlName=\"dType\" (change)=\"editDevice(device,i)\">\n                  <md-option value=\"0\">Smart swtich</md-option>\n                  <md-option value=\"1\">Smart sensor humidity and temperature</md-option>\n                  <md-option value=\"2\">Gass sensor</md-option>\n                  <md-option value=\"3\">Smart alarm</md-option>\n                </md-select>\n              </form>\n            </md-card-content>\n\n\n        </md-card>\n    </md-grid-tile>\n\n    <button md-fab class=\"btn-fab\" class=\"btn-fab\" (click)=\"add()\">\n        <md-icon>add</md-icon>\n    </button>\n</md-grid-list>\n\n\n\n"
 
 /***/ }),
 

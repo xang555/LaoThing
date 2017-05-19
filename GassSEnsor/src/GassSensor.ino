@@ -47,8 +47,7 @@ Serial.begin(250000);
 pinMode(SETTING_MODE,INPUT);
 pinMode(STATE_CONNECTION,OUTPUT);
 pinMode(gas_sensor, INPUT); //Set gas sensor as input
-
- // http.setReuse(true);
+ESP.eraseConfig();
 
 } // setup
 
@@ -314,6 +313,8 @@ if (Firebase.failed()) {
     return;
 }
 
+count_connection_lose = 0;
+
 uplink = state_uplink;
 
 }
@@ -338,36 +339,30 @@ void handleGasSensor() {
     if (!isNotify) {
         AlertNotification(); //send fcm
         isNotify = true;
+        repeatTime = 0;
     }
 
     repeatTime ++;
 
+    return;
   }
+
+  isNotify = false;
 
 } //handle Sensor
 
 void AlertNotification() {
 
-      http.begin(fcm_server,"A3 41 68 37 4D 94 36 8D 01 2C 68 49 05 58 D2 CC 0E 0B DE F4"); // url test server api
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-      http.addHeader("Authorization", fcm_server_key);
-      String payload = "sdid="+DEVICE_ID;
-      int httpCode =  http.sendRequest("POST",payload);
+Firebase.pushString(alert_listener_path, DEVICE_ID);
+// handle error
+if (Firebase.failed()) {
+    Serial.print("push alert failed:");
+    Serial.println(Firebase.error());
+    count_connection_lose++;
+    return;
+}
 
-  if (httpCode > 0 ) {
-
-  if (httpCode == HTTP_CODE_OK) {
-     Serial.println(http.getString());
-   }else{
-     Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
-   }
-
-   http.end();
-
- }else {
-   count_connection_lose++;
- }
-
+count_connection_lose = 0;
 
 } //alert notification
 
