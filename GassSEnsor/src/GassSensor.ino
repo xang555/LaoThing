@@ -17,8 +17,6 @@
 #define AP_PASSWORD "12345678"
 #define SETTING_MODE  D0
 #define STATE_CONNECTION  D5
-#define DHTPIN D4
-#define DHTTYPE DHT22
 
 String WIFI_SSID = "NODEMCU";
 String WIFI_PASSWORD = "nodemcu";
@@ -39,7 +37,6 @@ bool looping = true;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 60000);
-HTTPClient http;
 
 void setup() {
 Serial.begin(250000);
@@ -47,7 +44,6 @@ Serial.begin(250000);
 pinMode(SETTING_MODE,INPUT);
 pinMode(STATE_CONNECTION,OUTPUT);
 pinMode(gas_sensor, INPUT); //Set gas sensor as input
-ESP.eraseConfig();
 
 } // setup
 
