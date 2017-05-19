@@ -310,6 +310,8 @@ if (Firebase.failed()) {
 
 uplink = state_uplink;
 
+count_connection_lose = 0;
+
 }
 
 } // check if have uplink signal
@@ -324,6 +326,7 @@ bool alert = Firebase.getBool(alert_path);
 if (Firebase.failed()) {
     Serial.print("get alert path failed");
     Serial.println(Firebase.error());
+    count_connection_lose++;
     return;
 }
 
@@ -339,6 +342,9 @@ is_alert = false;
 count_alert_time = 0;
 }
 
+count_connection_lose = 0;
+
+
 } //handle Sensor
 
 
@@ -350,14 +356,18 @@ Firebase.setBool(alert_path, false);
 if (Firebase.failed()) {
     Serial.print("Update alert path failed");
     Serial.println(Firebase.error());
+    count_connection_lose++;
     return;
 }
+
+count_connection_lose = 0;
 
 }
 
 count_alert_time ++;
 
 } // timeer alert
+
 
 
 void checkConnection() {
