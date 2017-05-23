@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="MongoDb" id="Project_3e3d0e7" template="Default" database="MongoDb" >
+	<schema name="HomethingSchema" catalogname="HomethingSchema" >
+		<table name="SmartSwitchCollection" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="map" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="name" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="string" length="800" decimal="0" jt="12" />
+					<column name="L2" type="string" length="800" decimal="0" jt="12" />
+					<column name="L3" type="string" length="800" decimal="0" jt="12" />
+					<column name="L4" type="string" length="800" decimal="0" jt="12" />
+				</column>
+				<column name="scheduler" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L2" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L3" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L4" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+				</column>
+				<column name="status" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L2" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L3" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L4" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+				</column>
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+	</schema>
+	<connector name="MongoDb" database="MongoDb" driver_class="com.dbschema.MongoJdbcDriver" driver_jar="mongojdbc1.2.jar" driver_desc="No Authentication &lt;/span&gt;&lt;br&gt;&lt;b&gt;Use the Advanced tab for entering native URI (details in Help).&lt;br&gt;Check Help/ Output Logs for connectivity errors.&lt;/b&gt;" host="localhost" port="27017" instance="HomethingSchema" />
+	<layout name="Default Layout" id="Layout_f4e2e2" show_column_type="y" show_relation="columns" >
+		<comment><![CDATA[Default Layout]]></comment>
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L1" color="bfd4f5" x="540" y="45" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.name" color="bfd4f5" x="270" y="195" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.active" color="bfd4f5" x="270" y="90" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler" color="bfd4f5" x="360" y="615" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L2" color="bfd4f5" x="720" y="825" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L4" color="bfd4f5" x="720" y="705" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L3" color="bfd4f5" x="720" y="585" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L1" color="bfd4f5" x="720" y="465" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L4.time" color="bfd4f5" x="960" y="705" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L2.time" color="bfd4f5" x="960" y="825" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L3.time" color="bfd4f5" x="960" y="585" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L1.time" color="bfd4f5" x="960" y="465" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status" color="bfd4f5" x="375" y="360" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L3" color="bfd4f5" x="540" y="270" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L2" color="bfd4f5" x="540" y="150" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L4" color="bfd4f5" x="540" y="390" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid" color="bfd4f5" x="210" y="345" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" color="ffffff" x="45" y="345" />
+	</layout>
+</project>
