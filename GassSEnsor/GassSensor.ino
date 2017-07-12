@@ -1,23 +1,22 @@
+
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include "FirebasePath.h"
-#include <DHT.h>
 
 // Set firebae information
 #define FIREBASE_HOST "laothing-d014b.firebaseio.com"
 #define FIREBASE_AUTH "0twt7Oi5P0bJ55QSVZenjAgJuRXrXNbwc8YuR5ZT"
 // set AP WIFI
-#define AP_SSID "TempHumi10001"
+#define AP_SSID "SmartGas10002"
 #define AP_PASSWORD "12345678"
 #define SETTING_MODE  D0
 #define STATE_CONNECTION  D5
-#define DHTPIN D4
-#define DHTTYPE DHT22
 
 String WIFI_SSID = "";
 String WIFI_PASSWORD = "";
@@ -28,20 +27,24 @@ static bool isInitFirebase = false;
 
 static int count_connection_lose = 0; // count lose connection
 
+float m = -0.318; //Slope
+float b = 1.133; //Y-Intercept
+float R0 = 38.55; //Sensor Resistance in fresh air from previous code
+int gas_sensor = A0; //Sensor pin
+
 IPAddress ip(192,168,4,1);
-ESP8266WebServer server(80);
+ESP8266WebServer server(ip,80);
 bool looping = true;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 60000);
-DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
 Serial.begin(250000);
 //set pin mode
 pinMode(SETTING_MODE,INPUT);
 pinMode(STATE_CONNECTION,OUTPUT);
-dht.begin();
+pinMode(gas_sensor, INPUT); //Set gas sensor as input
 WiFi.softAPdisconnect(true);
 } // setup
 
@@ -53,22 +56,28 @@ void loop() {
   switch(state) {
 
   case 0 :
+    Serial.println("check Mode");
     checkMode(state); //check mode
   break;
 
   case 1 :
     //auto connect wifi and firebase
+    Serial.println("auto connect wifi and firebase");
    state = AutoConnectWifiAndFirebase();
+
+
   break;
 
   case 2 :
   //connect wifi
+     Serial.println("connect wifi and firebase");
      state = ConnectwifiAndFirebase();
 
   break;
 
   case 3 :
   //handle with firebase
+   Serial.println("handle firebase");
    handleFirebaseController(state);
 
   break;
@@ -92,7 +101,6 @@ while (mode == HIGH) {
   time_click_count+=100;
 
   if (time_click_count == 2000) {
-
     digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
     delay(100);
     digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
@@ -101,10 +109,11 @@ while (mode == HIGH) {
     delay(100);
     digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
 
-    looping = true; // loop create wifi
+    looping = true;
     state = CreateServerApi(); // create server api for setting mode
 
     return;
+
   }
 
 mode = digitalRead(SETTING_MODE); // read mode
@@ -132,9 +141,13 @@ return false;
 
 uint8_t AutoConnectWifiAndFirebase(){
 
+  
   WiFi.softAPdisconnect(true);
+  WiFi.enableSTA(true);
+  WiFi.mode(WIFI_STA);
   WiFi.setAutoConnect(true);
-  Serial.print("connecting");
+  WiFi.reconnect();
+   Serial.print("connecting");
 
   while (WiFi.status() != WL_CONNECTED) {
     if (isEnterOfflineMode()) {
@@ -152,24 +165,35 @@ initwhenConnectedWifiAndFirebase(); // connected wifi
 
 uint8_t CreateServerApi() {
 
-            WiFi.softAP(AP_SSID,AP_PASSWORD);
-            server.on("/setting",HTTP_POST,handleSetting);
-            server.onNotFound([](){
+           WiFi.enableSTA(false);
+           WiFi.mode(WIFI_AP);
+          WiFi.softAP(AP_SSID,AP_PASSWORD);
+          Serial.print("Ap Wifi IP address: ");
+          Serial.println(WiFi.softAPIP());
+
+          server.on("/setting",HTTP_POST,handleSetting);
+
+          server.onNotFound([](){
             server.send(200,"text/html","<h2>Not Found</h2>");
             });
+
            server.on("/",[](){
              server.send(200,"text/html","<h2>Your Connected ...</h2>");
             });
-            server.begin();
+
+          server.begin();
+          Serial.println("HTTP server started");
+
             while(looping) {
             server.handleClient();
-            Serial.println("handle clien");
            }
 
        if (isCloseServer) {
            return 1;
          }
+
          return 2;
+
 } //create server api for mode setting wifi
 
 
@@ -200,7 +224,11 @@ uint8_t ConnectwifiAndFirebase() {
 
   Serial.println(ssid);
   Serial.println(passwd);
-
+  ESP.eraseConfig();
+  WiFi.softAPdisconnect(true);
+  WiFi.disconnect(true);
+  WiFi.enableSTA(true);
+  WiFi.mode(WIFI_STA);
   //disconnect wifi
   WiFi.softAPdisconnect(true);
   WiFi.disconnect(true);
@@ -254,7 +282,7 @@ while (true) {
   }
 
   AnswerUplink();  // check device is active
-  handleTempandHumiSensor(); // send sensor value to Firebase
+  handleGasSensor(); // send sensor value to Firebase
   checkConnection(); //check connection
   delay(100);
 
@@ -274,7 +302,7 @@ if (Firebase.failed()) {
     count_connection_lose++;
     return;
 }
-count_connection_lose =0;
+
 if (state_uplink != uplink) {
 int ack = state_uplink;
 Firebase.setInt(ack_path,ack);
@@ -285,7 +313,9 @@ if (Firebase.failed()) {
     count_connection_lose++;
     return;
 }
+
 count_connection_lose = 0;
+
 uplink = state_uplink;
 
 }
@@ -294,103 +324,70 @@ uplink = state_uplink;
 
 /*------------- Handle Temp and Humi Sensor ------------*/
 
-void handleTempandHumiSensor() {
+void handleGasSensor() {
 
-  static float humi_prev = 0.0;
-  static float temp_prev = 0.0;
-  static int hour_prev = 0;
-  static int minute_prev = 0;
-  static int day_prev = 0;
+  double ppm = getSensorValue();
+  Serial.println(ppm);
+ static int repeatTime = 0;
+ static bool isNotify = false;
 
-  float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
+  if (ppm > 2000) {
 
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
+    if (repeatTime > 100) {
+      isNotify = false;
+    }
+
+    if (!isNotify) {
+        AlertNotification(); //send fcm
+        isNotify = true;
+        repeatTime = 0;
+    }
+
+    repeatTime ++;
+
     return;
   }
 
-if (humi_prev != h) {
-  Firebase.setFloat(humi_value_path, h);
-  if (!handleFirebaseError("Set humi to Firebase error")) {
-      return;
-  }
-  humi_prev = h;
-}
-
-if (temp_prev != t) {
-  Firebase.setFloat(temp_value_path, t);
-  if (!handleFirebaseError("Set temp to Firebase error")) {
-    return;
-  }
-  temp_prev = t;
-}
-
-String FullDateTime ="";
-
-if (day_prev != day()) {
-
-  String mday = "";
-  if (day() < 10) {
-  mday +=0;
-  }
-  mday +=day();
-
-  String mmonth = "";
-  if (month() < 10) {
-    mmonth +=0;
-  }
-  mmonth+=month();
-
-FullDateTime += mday;
-FullDateTime +="-";
-FullDateTime +=mmonth;
-FullDateTime += "-";
-FullDateTime +=year();
-
-Firebase.setString(update_fulldatetime_path,FullDateTime);
-if (!handleFirebaseError("Set FullDateTime to Firebase error")) {
-  return;
-}
-
-day_prev = day();
-
-}
-
-
-if (hour_prev != hour())  {
-  Firebase.setInt(update_time_unit_hour_path, hour());
-  if (!handleFirebaseError("Set time hour to Firebase error")) {
-    return;
-  }
-  hour_prev = hour();
-}
-
-if (minute_prev != minute()) {
-  Firebase.setInt(update_time_unit_minute_path, minute());
-  if (!handleFirebaseError("Set time minute to Firebase error")) {
-    return;
-  }
-  minute_prev = minute();
-}
+  isNotify = false;
 
 } //handle Sensor
 
-bool handleFirebaseError(char* msg) {
+void AlertNotification() {
 
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print(msg);
-      Serial.println(Firebase.error());
-      count_connection_lose++;
-      return false;
-  }
+Firebase.pushString(alert_listener_path, DEVICE_ID);
+// handle error
+if (Firebase.failed()) {
+    Serial.print("push alert failed:");
+    Serial.println(Firebase.error());
+    count_connection_lose++;
+    return;
+}
 
-count_connection_lose =0;
-return true;
-} //handel firebase error
+count_connection_lose = 0;
+
+} //alert notification
+
+
+double getSensorValue(){
+
+  float sensor_volt; //Define variable for sensor voltage
+  float RS_gas; //Define variable for sensor resistance
+  float ratio; //Define variable for ratio
+  float sensorValue = analogRead(gas_sensor); //Read analog values of sensor
+
+  sensor_volt = sensorValue * (5.0 / 1024.0); //Convert average to voltage
+  RS_gas = ((5.0 * 20.0) / sensor_volt) - 20.0; //Calculate RS in fresh air
+  ratio = RS_gas / R0;   // Get ratio RS_gas/RS_air
+
+  double ppm_log = (log10(ratio) - b) / m; //Get ppm value in linear scale according to the the ratio value
+  double ppm = pow(10, ppm_log); //Convert ppm value to log scale
+  //double percentage = ppm / 10000; //Convert to percentage
+
+  return ppm;
+
+} // get gass sensor
+
+
 
 void checkConnection() {
 

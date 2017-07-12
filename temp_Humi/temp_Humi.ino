@@ -29,7 +29,7 @@ static bool isInitFirebase = false;
 static int count_connection_lose = 0; // count lose connection
 
 IPAddress ip(192,168,4,1);
-ESP8266WebServer server(80);
+ESP8266WebServer server(ip,80);
 bool looping = true;
 
 WiFiUDP ntpUDP;
@@ -60,7 +60,7 @@ void loop() {
     //auto connect wifi and firebase
    state = AutoConnectWifiAndFirebase();
   break;
-
+ 
   case 2 :
   //connect wifi
      state = ConnectwifiAndFirebase();
@@ -133,7 +133,10 @@ return false;
 uint8_t AutoConnectWifiAndFirebase(){
 
   WiFi.softAPdisconnect(true);
+  WiFi.enableSTA(true);
+  WiFi.mode(WIFI_STA);
   WiFi.setAutoConnect(true);
+  WiFi.reconnect();
   Serial.print("connecting");
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -152,6 +155,8 @@ initwhenConnectedWifiAndFirebase(); // connected wifi
 
 uint8_t CreateServerApi() {
 
+            WiFi.enableSTA(false);
+            WiFi.mode(WIFI_AP);
             WiFi.softAP(AP_SSID,AP_PASSWORD);
             server.on("/setting",HTTP_POST,handleSetting);
             server.onNotFound([](){
@@ -200,11 +205,15 @@ uint8_t ConnectwifiAndFirebase() {
 
   Serial.println(ssid);
   Serial.println(passwd);
-
+  ESP.eraseConfig();
+  WiFi.softAPdisconnect(true);
+  WiFi.disconnect(true);
+  WiFi.enableSTA(true);
+  WiFi.mode(WIFI_STA);
   //disconnect wifi
   WiFi.softAPdisconnect(true);
   WiFi.disconnect(true);
-
+   
   // connect to wifi.
   WiFi.begin(ssid, passwd);
   Serial.print("connecting");
@@ -297,7 +306,7 @@ uplink = state_uplink;
 void handleTempandHumiSensor() {
 
   static float humi_prev = 0.0;
-  static float temp_prev = 0.0;
+  static float hic_prev = 0.0;
   static int hour_prev = 0;
   static int minute_prev = 0;
   static int day_prev = 0;
@@ -312,6 +321,9 @@ void handleTempandHumiSensor() {
     return;
   }
 
+  // Compute heat index in Celsius (isFahreheit = false)
+  float hic = dht.computeHeatIndex(t, h, false);
+
 if (humi_prev != h) {
   Firebase.setFloat(humi_value_path, h);
   if (!handleFirebaseError("Set humi to Firebase error")) {
@@ -320,12 +332,12 @@ if (humi_prev != h) {
   humi_prev = h;
 }
 
-if (temp_prev != t) {
-  Firebase.setFloat(temp_value_path, t);
+if (hic_prev != hic) {
+  Firebase.setFloat(temp_value_path, hic);
   if (!handleFirebaseError("Set temp to Firebase error")) {
     return;
   }
-  temp_prev = t;
+  hic_prev = hic;
 }
 
 String FullDateTime ="";
@@ -337,7 +349,7 @@ if (day_prev != day()) {
   mday +=0;
   }
   mday +=day();
-
+  
   String mmonth = "";
   if (month() < 10) {
     mmonth +=0;
@@ -387,7 +399,7 @@ bool handleFirebaseError(char* msg) {
       count_connection_lose++;
       return false;
   }
-
+  
 count_connection_lose =0;
 return true;
 } //handel firebase error

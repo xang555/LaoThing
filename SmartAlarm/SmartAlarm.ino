@@ -1,3 +1,4 @@
+
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
@@ -6,18 +7,17 @@
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include "FirebasePath.h"
-#include <DHT.h>
 
 // Set firebae information
 #define FIREBASE_HOST "laothing-d014b.firebaseio.com"
 #define FIREBASE_AUTH "0twt7Oi5P0bJ55QSVZenjAgJuRXrXNbwc8YuR5ZT"
 // set AP WIFI
-#define AP_SSID "TempHumi10001"
+#define AP_SSID "SmartAlarm10003"
 #define AP_PASSWORD "12345678"
 #define SETTING_MODE  D0
 #define STATE_CONNECTION  D5
-#define DHTPIN D4
-#define DHTTYPE DHT22
+#define SPAEKER_PIN D1
+
 
 String WIFI_SSID = "";
 String WIFI_PASSWORD = "";
@@ -27,21 +27,22 @@ static bool isCloseServer = false; // count lose connection
 static bool isInitFirebase = false;
 
 static int count_connection_lose = 0; // count lose connection
+static int count_alert_time = 0;
 
 IPAddress ip(192,168,4,1);
-ESP8266WebServer server(80);
+ESP8266WebServer server(ip,80);
 bool looping = true;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "0.asia.pool.ntp.org", 7*3600, 60000);
-DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
 Serial.begin(250000);
 //set pin mode
 pinMode(SETTING_MODE,INPUT);
 pinMode(STATE_CONNECTION,OUTPUT);
-dht.begin();
+pinMode(SPAEKER_PIN, OUTPUT);
+digitalWrite(SPAEKER_PIN,LOW);
 WiFi.softAPdisconnect(true);
 } // setup
 
@@ -53,22 +54,28 @@ void loop() {
   switch(state) {
 
   case 0 :
+    Serial.println("check Mode");
     checkMode(state); //check mode
   break;
 
   case 1 :
     //auto connect wifi and firebase
+    Serial.println("auto connect wifi and firebase");
    state = AutoConnectWifiAndFirebase();
+
+
   break;
 
   case 2 :
   //connect wifi
+     Serial.println("connect wifi and firebase");
      state = ConnectwifiAndFirebase();
 
   break;
 
   case 3 :
   //handle with firebase
+   Serial.println("handle firebase");
    handleFirebaseController(state);
 
   break;
@@ -94,17 +101,18 @@ while (mode == HIGH) {
   if (time_click_count == 2000) {
 
     digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
-    delay(100);
+    delay(200);
     digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
-    delay(100);
+    delay(200);
     digitalWrite(STATE_CONNECTION,HIGH);//trun on state LED
-    delay(100);
+    delay(200);
     digitalWrite(STATE_CONNECTION,LOW);//trun off state LED
 
-    looping = true; // loop create wifi
+    looping = true;
     state = CreateServerApi(); // create server api for setting mode
 
     return;
+
   }
 
 mode = digitalRead(SETTING_MODE); // read mode
@@ -133,9 +141,11 @@ return false;
 uint8_t AutoConnectWifiAndFirebase(){
 
   WiFi.softAPdisconnect(true);
+  WiFi.enableSTA(true);
+  WiFi.mode(WIFI_STA);
   WiFi.setAutoConnect(true);
+  WiFi.reconnect();
   Serial.print("connecting");
-
   while (WiFi.status() != WL_CONNECTED) {
     if (isEnterOfflineMode()) {
          return 0;
@@ -152,24 +162,37 @@ initwhenConnectedWifiAndFirebase(); // connected wifi
 
 uint8_t CreateServerApi() {
 
-            WiFi.softAP(AP_SSID,AP_PASSWORD);
-            server.on("/setting",HTTP_POST,handleSetting);
-            server.onNotFound([](){
+          WiFi.enableSTA(false);
+          WiFi.mode(WIFI_AP);
+          WiFi.softAP(AP_SSID,AP_PASSWORD);
+          Serial.print("Ap Wifi IP address: ");
+          Serial.println(WiFi.softAPIP());
+
+          server.on("/setting",HTTP_POST,handleSetting);
+
+          server.onNotFound([](){
             server.send(200,"text/html","<h2>Not Found</h2>");
             });
+
            server.on("/",[](){
              server.send(200,"text/html","<h2>Your Connected ...</h2>");
             });
-            server.begin();
+
+          server.begin();
+          Serial.println("HTTP server started");
+
             while(looping) {
             server.handleClient();
             Serial.println("handle clien");
+            delayMicroseconds(100);
            }
 
        if (isCloseServer) {
            return 1;
          }
+
          return 2;
+
 } //create server api for mode setting wifi
 
 
@@ -200,7 +223,11 @@ uint8_t ConnectwifiAndFirebase() {
 
   Serial.println(ssid);
   Serial.println(passwd);
-
+  ESP.eraseConfig();
+  WiFi.softAPdisconnect(true);
+  WiFi.disconnect(true);
+  WiFi.enableSTA(true);
+  WiFi.mode(WIFI_STA);
   //disconnect wifi
   WiFi.softAPdisconnect(true);
   WiFi.disconnect(true);
@@ -254,7 +281,7 @@ while (true) {
   }
 
   AnswerUplink();  // check device is active
-  handleTempandHumiSensor(); // send sensor value to Firebase
+  handleSmartLarm(); // send sensor value to Firebase
   checkConnection(); //check connection
   delay(100);
 
@@ -265,7 +292,7 @@ while (true) {
 void AnswerUplink() {
 
 static uint8_t uplink = 0;
-int state_uplink= Firebase.getInt(uplink_path);
+int state_uplink= Firebase.getInt(uplink_path); 
 
 // handle error
 if (Firebase.failed()) {
@@ -274,7 +301,7 @@ if (Firebase.failed()) {
     count_connection_lose++;
     return;
 }
-count_connection_lose =0;
+
 if (state_uplink != uplink) {
 int ack = state_uplink;
 Firebase.setInt(ack_path,ack);
@@ -285,8 +312,10 @@ if (Firebase.failed()) {
     count_connection_lose++;
     return;
 }
-count_connection_lose = 0;
+
 uplink = state_uplink;
+
+count_connection_lose = 0;
 
 }
 
@@ -294,103 +323,57 @@ uplink = state_uplink;
 
 /*------------- Handle Temp and Humi Sensor ------------*/
 
-void handleTempandHumiSensor() {
+void handleSmartLarm() {
 
-  static float humi_prev = 0.0;
-  static float temp_prev = 0.0;
-  static int hour_prev = 0;
-  static int minute_prev = 0;
-  static int day_prev = 0;
-
-  float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
-
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
+static bool is_alert = false;
+bool alert = Firebase.getBool(alert_path);
+// handle error
+if (Firebase.failed()) {
+    Serial.print("get alert path failed");
+    Serial.println(Firebase.error());
+    count_connection_lose++;
     return;
-  }
-
-if (humi_prev != h) {
-  Firebase.setFloat(humi_value_path, h);
-  if (!handleFirebaseError("Set humi to Firebase error")) {
-      return;
-  }
-  humi_prev = h;
 }
 
-if (temp_prev != t) {
-  Firebase.setFloat(temp_value_path, t);
-  if (!handleFirebaseError("Set temp to Firebase error")) {
-    return;
+if (alert) {
+  if (!is_alert) {
+    digitalWrite(SPAEKER_PIN,HIGH);
+    is_alert = true;
   }
-  temp_prev = t;
+  TimerAlert(); // timeer alert
+}else {
+digitalWrite(SPAEKER_PIN,LOW);
+is_alert = false;
+count_alert_time = 0;
 }
 
-String FullDateTime ="";
+count_connection_lose = 0;
 
-if (day_prev != day()) {
-
-  String mday = "";
-  if (day() < 10) {
-  mday +=0;
-  }
-  mday +=day();
-
-  String mmonth = "";
-  if (month() < 10) {
-    mmonth +=0;
-  }
-  mmonth+=month();
-
-FullDateTime += mday;
-FullDateTime +="-";
-FullDateTime +=mmonth;
-FullDateTime += "-";
-FullDateTime +=year();
-
-Firebase.setString(update_fulldatetime_path,FullDateTime);
-if (!handleFirebaseError("Set FullDateTime to Firebase error")) {
-  return;
-}
-
-day_prev = day();
-
-}
-
-
-if (hour_prev != hour())  {
-  Firebase.setInt(update_time_unit_hour_path, hour());
-  if (!handleFirebaseError("Set time hour to Firebase error")) {
-    return;
-  }
-  hour_prev = hour();
-}
-
-if (minute_prev != minute()) {
-  Firebase.setInt(update_time_unit_minute_path, minute());
-  if (!handleFirebaseError("Set time minute to Firebase error")) {
-    return;
-  }
-  minute_prev = minute();
-}
 
 } //handle Sensor
 
-bool handleFirebaseError(char* msg) {
 
-  // handle error
-  if (Firebase.failed()) {
-      Serial.print(msg);
-      Serial.println(Firebase.error());
-      count_connection_lose++;
-      return false;
-  }
+void TimerAlert() {
 
-count_connection_lose =0;
-return true;
-} //handel firebase error
+if (count_alert_time >=50) {
+Firebase.setBool(alert_path, false);
+// handle error
+if (Firebase.failed()) {
+    Serial.print("Update alert path failed");
+    Serial.println(Firebase.error());
+    count_connection_lose++;
+    return;
+}
+
+count_connection_lose = 0;
+
+}
+
+count_alert_time ++;
+
+} // timeer alert
+
+
 
 void checkConnection() {
 
