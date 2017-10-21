@@ -1,4 +1,4 @@
-const String DEVICE_ID = "1000420170703"; //set DEVICE ID
+const String DEVICE_ID = "1000020170612"; //set DEVICE ID
 
 const String uplink_path = DEVICE_ID + "/active/uplink"; // set uplink path
 const String ack_path = DEVICE_ID + "/active/ack"; // set ack path
@@ -28,5 +28,3 @@ const String scheduler_status_channel_four_path = DEVICE_ID + "/scheduler/L4/sta
 const String scheduler_time_channel_four_path = DEVICE_ID + "/scheduler/L4/time";// set scheduler time change new four
 const String scheduler_time_hour_channel_four_path = DEVICE_ID + "/scheduler/L4/time/hour";// set scheduler huor change new four
 const String scheduler_time_minute_channel_four_path = DEVICE_ID + "/scheduler/L4/time/minute";// set scheduler minute change new four
-
-
