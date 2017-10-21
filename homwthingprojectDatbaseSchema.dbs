@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="MongoDb" id="Project_3e3d0e7" template="Default" database="MongoDb" >
+	<schema name="HomethingSchema" catalogname="HomethingSchema" >
+		<table name="SmartAlarm" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="alert" type="boolean" length="800" decimal="0" jt="16" />
+				<column name="link" type="string" length="800" decimal="0" jt="12" />
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="SmartSwitchCollection" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="map" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="name" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="string" length="800" decimal="0" jt="12" />
+					<column name="L2" type="string" length="800" decimal="0" jt="12" />
+					<column name="L3" type="string" length="800" decimal="0" jt="12" />
+					<column name="L4" type="string" length="800" decimal="0" jt="12" />
+				</column>
+				<column name="scheduler" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L2" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L3" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L4" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+				</column>
+				<column name="status" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L2" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L3" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L4" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+				</column>
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="TempHumiSensor" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="sensor" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="values" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="hum" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="val" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+						<column name="temp" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="val" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+				</column>
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="TempHumniCollection" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="1213453453543" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="sensor" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="values" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="hum" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="val" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+						<column name="temp" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="val" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+				</column>
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="gasSchema" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="sensor" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="alert" type="list" length="800" decimal="0" jt="4999545" >
+						<column name="42423423" type="string" length="800" decimal="0" jt="12" />
+					</column>
+					<column name="SmartAlarmlinks" type="list" length="800" decimal="0" jt="4999545" >
+						<column name="232232" type="string" length="800" decimal="0" jt="12" />
+					</column>
+				</column>
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="sampleCollection" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="837548734" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+				<column name="active" type="map" length="800" decimal="0" jt="4999544" mandatory="y" >
+					<column name="ack" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+					<column name="uplink" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+				</column>
+				<column name="name" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="string" length="800" decimal="0" jt="12" />
+					<column name="L2" type="string" length="800" decimal="0" jt="12" />
+					<column name="L3" type="string" length="800" decimal="0" jt="12" />
+					<column name="L4" type="string" length="800" decimal="0" jt="12" />
+				</column>
+				<column name="scheduler" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L2" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L3" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+					<column name="L4" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="state" type="boolean" length="800" decimal="0" jt="16" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+						<column name="time" type="map" length="800" decimal="0" jt="4999544" >
+							<column name="hour" type="integer" length="800" decimal="0" jt="4" />
+							<column name="minute" type="integer" length="800" decimal="0" jt="4" />
+						</column>
+					</column>
+				</column>
+				<column name="status" type="map" length="800" decimal="0" jt="4999544" >
+					<column name="L1" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L2" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L3" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+					<column name="L4" type="map" length="800" decimal="0" jt="4999544" >
+						<column name="ack" type="integer" length="800" decimal="0" jt="4" />
+						<column name="status" type="integer" length="800" decimal="0" jt="4" />
+					</column>
+				</column>
+			</column>
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+	</schema>
+	<schema name="homething" catalogname="homething" >
+		<table name="permissions" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="pcode" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="__v" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="smartdevices" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="sdid" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="sharecode" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="nicname" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="type" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+			<column name="__v" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+		</table>
+		<table name="users" >
+			<column name="_id" type="oid" length="800" decimal="0" jt="-8" mandatory="y" autoincrement="y" />
+			<column name="uid" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="uname" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="fname" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="lname" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="email" type="string" length="800" decimal="0" jt="12" mandatory="y" />
+			<column name="device" type="list" length="800" decimal="0" jt="4999545" mandatory="y" >
+				<column name="type" type="integer" length="800" decimal="0" jt="4" />
+				<column name="nicname" type="string" length="800" decimal="0" jt="12" />
+				<column name="sharecode" type="string" length="800" decimal="0" jt="12" />
+				<column name="sdid" type="string" length="800" decimal="0" jt="12" />
+				<column name="_id" type="oid" length="800" decimal="0" jt="-8" />
+			</column>
+			<column name="__v" type="integer" length="800" decimal="0" jt="4" mandatory="y" />
+			<index name="_id_" unique="PRIMARY_KEY" >
+				<column name="_id" />
+			</index>
+			<fk name="Ref" virtual="y" to_schema="homething" to_table="smartdevices" >
+				<fk_column name="_id" pk="_id" />
+			</fk>
+		</table>
+	</schema>
+	<connector name="MongoDb" database="MongoDb" driver_class="com.dbschema.MongoJdbcDriver" driver_jar="mongojdbc1.2.jar" driver_desc="No Authentication &lt;/span&gt;&lt;br&gt;&lt;b&gt;Use the Advanced tab for entering native URI (details in Help).&lt;br&gt;Check Help/ Output Logs for connectivity errors.&lt;/b&gt;" host="localhost" port="27017" instance="homething" />
+	<connector name="MongoDb" database="MongoDb" driver_class="com.dbschema.MongoJdbcDriver" driver_jar="mongojdbc1.2.jar" driver_desc="No Authentication &lt;/span&gt;&lt;br&gt;&lt;b&gt;Use the Advanced tab for entering native URI (details in Help).&lt;br&gt;Check Help/ Output Logs for connectivity errors.&lt;/b&gt;" host="localhost" port="27017" instance="HomethingSchema" />
+	<layout name="Default Layout" id="Layout_f4e2e2" confirmed="y" show_column_type="y" show_relation="columns" >
+		<comment><![CDATA[Default Layout]]></comment>
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L1" color="bfd4f5" x="540" y="45" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.name" color="bfd4f5" x="270" y="195" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.active" color="bfd4f5" x="270" y="90" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler" color="bfd4f5" x="360" y="615" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L2" color="bfd4f5" x="720" y="825" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L4" color="bfd4f5" x="720" y="705" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L3" color="bfd4f5" x="720" y="585" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L1" color="bfd4f5" x="720" y="465" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L4.time" color="bfd4f5" x="960" y="705" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L2.time" color="bfd4f5" x="960" y="825" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L3.time" color="bfd4f5" x="960" y="585" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.scheduler.L1.time" color="bfd4f5" x="960" y="465" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status" color="bfd4f5" x="375" y="360" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L3" color="bfd4f5" x="540" y="270" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L2" color="bfd4f5" x="540" y="150" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid.status.L4" color="bfd4f5" x="540" y="390" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" column="sdid" color="bfd4f5" x="210" y="345" />
+		<entity schema="HomethingSchema" name="SmartSwitchCollection" color="ffffff" x="45" y="345" />
+	</layout>
+</project>

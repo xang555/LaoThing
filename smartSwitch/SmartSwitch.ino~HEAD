@@ -10,7 +10,7 @@
 #define FIREBASE_HOST "laothing-d014b.firebaseio.com"
 #define FIREBASE_AUTH "0twt7Oi5P0bJ55QSVZenjAgJuRXrXNbwc8YuR5ZT"
 // set AP WIFI
-#define AP_SSID "smartswitch10004"
+#define AP_SSID "smartswitch10000"
 #define AP_PASSWORD "12345678"
 #define SETTING_MODE  D8
 #define STATE_CONNECTION  D5
@@ -20,8 +20,8 @@
 #define CHANNEL_FOUR D7
 
 
-String WIFI_SSID = "HUAWEI P9";
-String WIFI_PASSWORD = "98866777";
+String WIFI_SSID = "";
+String WIFI_PASSWORD = "";
 
 static bool manual_connect = false; // is manual connection
 static bool isCloseServer = false; // count lose connection
@@ -193,8 +193,7 @@ uint8_t CreateServerApi() {
           WiFi.softAP(AP_SSID,AP_PASSWORD);
           server.on("/setting",HTTP_POST,handleSetting);
           server.on("/controller", HTTP_POST, handleSwitchController);
-          server.on("/close",HTTP_GET,hanndelCloseServer);
-          
+
           server.onNotFound([](){
             server.send(200,"text/html","<h2>Not Found</h2>");
             });
@@ -206,6 +205,7 @@ uint8_t CreateServerApi() {
           server.begin();
 
             while(looping) {
+              
             server.handleClient();
            }
 
@@ -250,16 +250,6 @@ void handleSetting(){
   server.close();
 
 } // handle setting mode
-
-void hanndelCloseServer() {
- server.send(200,"application/json","{ \"stat\" : \"ok\" }");
-  delay(500);
-  looping = false;
-  isCloseServer = true;
-  WiFi.softAPdisconnect(true);
-  server.close();
-} //handle close server
-
 
 uint8_t ConnectwifiAndFirebase() {
 
@@ -323,20 +313,26 @@ while (true) {
   }
 
   AnswerUplink();  // check device is active
-  
+  delay(10);
   handleSwitchChannelOne(); // handle switch L1
+  delay(10);
   handleSwitchChannelTwo(); //handle switch L2
+  delay(10);
   handleSwitchChannelThree(); //handel switch L3
+  delay(10);
   handleSwitchChannelFour(); //handel switch L4
-
+  delay(10);
   scheduler_switch_L1(); //scheduler l1
+  delay(10);
   scheduler_switch_L2(); //scheduler l2
+  delay(10);
   scheduler_switch_L3(); //scheduler l3
+  delay(10);
   scheduler_switch_L4(); //scheduler l4
-
+  delay(10);
   checkConnection(); //check connection
-
-  delay(100);
+  Serial.println("handle firebase");
+  delay(50);
 
 }
 
@@ -360,6 +356,7 @@ int ack = state_uplink;
 Firebase.setInt(ack_path,ack);
 // handle error
 if (Firebase.failed()) {
+    Serial.println("Failure... in uplink");
     count_connection_lose ++;
     return;
 }
